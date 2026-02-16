@@ -20,8 +20,15 @@ if is_sqlite:
     )
 else:
     # PostgreSQL with connection pooling
+    # Fix for Railway providing postgres:// but asyncpg needing postgresql+asyncpg://
+    database_url = settings.DATABASE_URL
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
     engine = create_async_engine(
-        settings.DATABASE_URL,
+        database_url,
         echo=False,
         future=True,
         pool_pre_ping=True,
