@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Platformasi - Test ishlash</title>
+    <link rel="stylesheet" href="css/style.css?v=3">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Timer Section -->
+        <div class="timer-section">
+            <div class="timer-label">Qolgan vaqt</div>
+            <div class="timer-display" id="timer">1:30:00</div>
+            <div class="timer-warning" id="warning" style="display:none;">⚠️ 10 daqiqadan kam vaqt qoldi!</div>
+        </div>
+
+        <!-- Test Header -->
+        <div class="test-header">
+            <h1>Test Platformasi</h1>
+            <p id="test-title">Test yuklanmoqda...</p>
+        </div>
+
+        <!-- MCQ Section -->
+        <div class="section">
+            <h2>1-qism: Test savollari (1-35)</h2>
+            <p class="instructions">1-32 savollar: A, B, C yoki D ni tanlang<br>33-35 savollar: A, B, C, D, E yoki F ni
+                tanlang
+            </p>
+
+            <div class="mcq-grid" id="mcq-container"></div>
+        </div>
+
+        <!-- Written Section -->
+        <div class="section">
+            <h2>2-qism: Yozma savollar (36-37)</h2>
+            <p class="instructions">Har bir savolning a) va b) qismlariga javob yozing.</p>
+
+            <div class="written-container" id="written-container"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="submit-section">
+            <button id="submit-btn" class="submit-btn">Testni topshirish</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>Test yuklanmoqda...</p>
+    </div>
+
+    <script src="js/timer.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
+</body>
+
+</html>

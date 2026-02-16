@@ -1,0 +1,280 @@
+/**
+ * Main application logic for test taking
+ */
+
+const API_BASE = window.location.origin;
+let sessionToken = null;
+let timer = null;
+let mcqAnswers = {};
+let writtenAnswers = {};
+
+// Get session token from URL
+function getSessionToken() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token');
+}
+
+// Show/hide loading
+function setLoading(isLoading) {
+    const loading = document.getElementById('loading');
+    if (isLoading) {
+        loading.classList.remove('hidden');
+    } else {
+        loading.classList.add('hidden');
+    }
+}
+
+// Load session and start test
+async function loadSession() {
+    sessionToken = getSessionToken();
+
+    if (!sessionToken) {
+        alert('Test havolasi noto\'g\'ri. Iltimos, botdan yangi havola oling.');
+        return;
+    }
+
+    try {
+        setLoading(true);
+
+        // Get session details
+        const response = await fetch(`${API_BASE}/api/v1/sessions/${sessionToken}`);
+
+        if (!response.ok) {
+            throw new Error('Sessiya topilmadi yoki muddati tugagan');
+        }
+
+        const session = await response.json();
+
+        // Check if session is valid
+        if (!session.is_valid) {
+            setLoading(false);
+            if (session.is_submitted) {
+                alert('Bu test allaqachon topshirilgan. Natijalaringizni Telegram botdan tekshiring.');
+            } else if (session.is_expired) {
+                alert('Test vaqti tugagan. Yangi link olish uchun botga murojaat qiling.');
+            } else {
+                alert('Bu sessiyaning muddati tugagan yoki topshirilgan.');
+            }
+            return;
+        }
+
+        // Get test details from session (session already has test info)
+        document.getElementById('test-title').textContent = session.test_title || 'Test';
+
+        // Initialize UI
+        createMCQGrid();
+        createWrittenFields();
+
+        // Start timer
+        timer = new window.Timer(
+            session.expires_at,
+            showWarning,
+            handleTimeExpire
+        );
+        timer.start();
+
+    } catch (error) {
+        console.error('Error loading session:', error);
+        alert('Testni yuklashda xatolik: ' + error.message);
+    } finally {
+        setLoading(false);
+    }
+}
+
+// Create MCQ answer grid
+function createMCQGrid() {
+    const container = document.getElementById('mcq-container');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= 35; i++) {
+        const item = document.createElement('div');
+        item.className = 'mcq-item';
+
+        // Questions 1-32: 4 options (A, B, C, D)
+        // Questions 33-35: 6 options (A, B, C, D, E, F)
+        const options = i <= 32 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E', 'F'];
+
+        const optionsHTML = options.map(opt =>
+            `<button class="option-btn" data-question="${i}" data-option="${opt}">${opt}</button>`
+        ).join('');
+
+        item.innerHTML = `
+            <div class="mcq-number">${i}-savol</div>
+            <div class="mcq-options">
+                ${optionsHTML}
+            </div>
+        `;
+        container.appendChild(item);
+    }
+
+    // Add click handlers
+    container.addEventListener('click', (e) => {
+        if (e.target.classList.contains('option-btn')) {
+            const question = e.target.dataset.question;
+            const option = e.target.dataset.option;
+
+            // Remove selected class from all options for this question
+            const buttons = container.querySelectorAll(`[data-question="${question}"]`);
+            buttons.forEach(btn => btn.classList.remove('selected'));
+
+            // Add selected class to clicked option
+            e.target.classList.add('selected');
+
+            // Store answer
+            mcqAnswers[question] = option;
+        }
+    });
+}
+
+// Create written answer fields
+function createWrittenFields() {
+    const container = document.getElementById('written-container');
+    container.innerHTML = '';
+
+    // Questions 36-37: Each has a) and b) sub-parts
+    for (let i = 36; i <= 37; i++) {
+        const item = document.createElement('div');
+        item.className = 'written-item';
+        item.innerHTML = `
+            <div class="written-number">${i}-savol</div>
+            <div class="sub-answer">
+                <label>a)</label>
+                <textarea 
+                    class="written-textarea" 
+                    id="written-${i}-a"
+                    placeholder="a) qismiga javob yozing..."
+                ></textarea>
+            </div>
+            <div class="sub-answer">
+                <label>b)</label>
+                <textarea 
+                    class="written-textarea" 
+                    id="written-${i}-b"
+                    placeholder="b) qismiga javob yozing..."
+                ></textarea>
+            </div>
+        `;
+        container.appendChild(item);
+
+        // Add change handlers for a) and b)
+        const textareaA = item.querySelector(`#written-${i}-a`);
+        const textareaB = item.querySelector(`#written-${i}-b`);
+
+        if (!writtenAnswers[i]) {
+            writtenAnswers[i] = { a: '', b: '' };
+        }
+
+        textareaA.addEventListener('input', (e) => {
+            writtenAnswers[i].a = e.target.value;
+        });
+        textareaB.addEventListener('input', (e) => {
+            writtenAnswers[i].b = e.target.value;
+        });
+    }
+}
+
+// Show warning
+function showWarning() {
+    const warning = document.getElementById('warning');
+    warning.style.display = 'block';
+}
+
+// Handle time expire - auto submit
+async function handleTimeExpire() {
+    alert('Vaqt tugadi! Testingiz avtomatik topshirilmoqda...');
+    await submitTest();
+}
+
+// Submit test
+let isSubmitting = false;
+
+async function submitTest() {
+    if (isSubmitting) return; // Prevent double submit
+    isSubmitting = true;
+
+    if (timer) {
+        timer.stop();
+    }
+
+    // Prepare MCQ answers (1-35)
+    const mcqArray = [];
+    for (let i = 1; i <= 35; i++) {
+        mcqArray.push({
+            question_number: i,
+            answer: mcqAnswers[i] || null
+        });
+    }
+
+    // Prepare written answers (36-37 with a/b sub-parts)
+    const writtenArray = [];
+    for (let i = 36; i <= 37; i++) {
+        writtenArray.push({
+            question_number: i,
+            answer: writtenAnswers[i] || { a: null, b: null }
+        });
+    }
+
+    const submission = {
+        session_token: sessionToken,
+        mcq_answers: mcqArray,
+        written_answers: writtenArray
+    };
+
+    try {
+        setLoading(true);
+
+        const response = await fetch(`${API_BASE}/api/v1/results/submit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(submission)
+        });
+
+        // Both 200 (existing result) and 201 (new result) are success
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Test muvaffaqiyatli topshirildi!\n\nMCQ Ball: ${result.mcq_score}/35\n\nYozma javoblar o'qituvchi tomonidan baholanadi.\n\nNatijalaringizni Telegram botdan tekshiring!`);
+
+            // Disable further interaction
+            document.getElementById('submit-btn').disabled = true;
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            document.querySelectorAll('.written-textarea').forEach(ta => ta.disabled = true);
+        } else {
+            let errorMessage = 'Topshirishda xatolik';
+            try {
+                const error = await response.json();
+                errorMessage = error.detail || errorMessage;
+            } catch (e) {
+                errorMessage = `Server xatoligi (${response.status})`;
+            }
+            throw new Error(errorMessage);
+        }
+
+    } catch (error) {
+        console.error('Error submitting test:', error);
+        alert('Testni topshirishda xatolik: ' + error.message);
+        isSubmitting = false; // Allow retry on error
+    } finally {
+        setLoading(false);
+    }
+}
+
+// Setup submit button
+document.getElementById('submit-btn').addEventListener('click', async () => {
+    const confirmed = confirm('Testni topshirmoqchimisiz? Bu amalni qaytarib bo\'lmaydi.');
+    if (confirmed) {
+        await submitTest();
+    }
+});
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', loadSession);
+
+// Prevent accidental page close
+window.addEventListener('beforeunload', (e) => {
+    if (timer && timer.interval) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});

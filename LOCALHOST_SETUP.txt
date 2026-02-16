@@ -1,0 +1,77 @@
+# ============================================
+# LOCALHOST DA ISHLATISH - STEP BY STEP
+# ============================================
+
+# QADAAM 1: PostgreSQL O'rnatish (Docker siz)
+# --------------------------------------------
+# PostgreSQL ni yuklab oling va o'rnating:
+# https://www.postgresql.org/download/windows/
+# 
+# O'rnatish vaqtida:
+# - Password: postgres
+# - Port: 5432
+# - Database yaratish: testing_platform
+#
+# Yoki EDB Installer ishlatib postgres user bilan kirish mumkin
+
+# QADAAM 2: Backend Dependencies O'rnatish
+# --------------------------------------------
+# PowerShell da (Backend papkasida):
+
+cd "C:\Users\ANUBIS PC\Desktop\Rash\backend"
+
+pip install -r requirements.txt
+
+# QADAAM 3: Database Initialize
+# --------------------------------------------
+
+python init_db.py
+
+# QADAAM 4: Admin User Yaratish (API orqali)
+# --------------------------------------------
+# Backend ishga tushgandan KEYIN quyidagi curl yoki Postman bilan:
+# (Avval backendni ishga tushiring, keyin boshqa terminalda admin yarating)
+
+# QADAAM 5: Backend Ishga Tushirish
+# --------------------------------------------
+
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Backend ishlab turishi kerak: http://localhost:8000
+
+
+# ============================================
+# QADAAM 6: Bot Ishga Tushirish
+# ============================================
+# YANGI TERMINAL ochib (Backend ishlayotgan boshqa terminalda):
+
+cd "C:\Users\ANUBIS PC\Desktop\Rash\bot"
+
+pip install -r requirements.txt
+
+python bot.py
+
+
+# ============================================
+# QADAAM 7: Admin User Yaratish (Backend ishlaganda)
+# ============================================
+# Postman yoki PowerShell da (Backend ishlayotganda):
+
+# PowerShell:
+Invoke-WebRequest -Uri "http://localhost:8000/api/v1/auth/register" `
+  -Method POST `
+  -Headers @{"Content-Type"="application/json"} `
+  -Body '{"username":"admin","password":"admin123","role":"admin"}'
+
+# Yoki browser da http://localhost:8000/docs ochib 
+# /api/v1/auth/register endpoint orqali yarating
+
+
+# ============================================
+# TEKSHIRISH
+# ============================================
+
+# Backend API Docs: http://localhost:8000/docs
+# Health Check: http://localhost:8000/health  
+# Admin Panel: http://localhost:8000/static/admin/
+# Telegram Bot: @IntervIew21_bot ga /start

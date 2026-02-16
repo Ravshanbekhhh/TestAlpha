@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Test Platformasi</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+
+<body>
+    <div class="login-container" id="login-page">
+        <div class="login-card">
+            <h1>🔐 Admin Kirish</h1>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Foydalanuvchi nomi</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Parol</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">Kirish</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-container hidden" id="admin-panel">
+        <nav class="sidebar">
+            <div class="logo">📚 Test Platformasi</div>
+            <ul class="menu">
+                <li><a href="#" data-page="dashboard" class="active">Bosh sahifa</a></li>
+                <li><a href="#" data-page="tests">Testlarni boshqarish</a></li>
+
+                <li><a href="#" data-page="students">Talabalar</a></li>
+                <li><a href="#" id="logout-btn">Chiqish</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <!-- Dashboard -->
+            <div class="page active" id="dashboard-page">
+                <h1>Bosh sahifa</h1>
+                <div class="stats-grid" id="stats"></div>
+                <div class="recent-tests" id="recent-tests"></div>
+            </div>
+
+            <!-- Manage Tests -->
+            <div class="page" id="tests-page">
+                <h1>Testlarni boshqarish</h1>
+                <button class="btn-primary" id="create-test-btn">+ Yangi test yaratish</button>
+                <div class="tests-list" id="tests-list"></div>
+            </div>
+
+
+
+            <!-- Students -->
+            <div class="page" id="students-page">
+                <h1>Talabalar</h1>
+                <div class="students-list" id="students-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Test Modal -->
+    <div class="modal hidden" id="create-test-modal">
+        <div class="modal-content">
+            <h2>Yangi test yaratish</h2>
+            <form id="create-test-form">
+                <div class="form-group">
+                    <label>Test kodi</label>
+                    <input type="text" id="test-code" required>
+                </div>
+                <div class="form-group">
+                    <label>Test nomi</label>
+                    <input type="text" id="test-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Tavsif</label>
+                    <textarea id="test-desc"></textarea>
+                </div>
+                <h3>Test javoblari (1-35)</h3>
+                <div id="mcq-answers-grid"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-create">Bekor qilish</button>
+                    <button type="submit" class="btn-primary">Test yaratish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Test Modal -->
+    <div class="modal hidden" id="edit-test-modal">
+        <div class="modal-content">
+            <h2>✏️ Test Tahrirlash</h2>
+            <form id="edit-test-form">
+                <div class="form-group">
+                    <label>Test kodi</label>
+                    <input type="text" id="edit-test-code" required>
+                </div>
+                <div class="form-group">
+                    <label>Test nomi</label>
+                    <input type="text" id="edit-test-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Tavsif</label>
+                    <textarea id="edit-test-desc"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="edit-test-active">
+                        Faol
+                    </label>
+                </div>
+                <h3>Test javoblari (1-35)</h3>
+                <div id="edit-mcq-answers-grid"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancel-edit">Bekor qilish</button>
+                    <button type="submit" class="btn-primary">💾 Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

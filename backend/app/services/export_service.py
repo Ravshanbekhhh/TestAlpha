@@ -1,0 +1,380 @@
+"""
+Export service for generating Excel and PDF reports.
+"""
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List
+from uuid import UUID
+from datetime import datetime
+import os
+
+from app.models.result import Result, MCQAnswer
+from app.models.user import User
+from app.models.test import Test
+from app.config import settings
+
+
+async def export_results_to_excel(db: AsyncSession, test_id: UUID, filepath: str) -> str:
+    """
+    Export test results to Excel file.
+    Shows 0 (wrong) / 1 (correct) for each question.
+    
+    Args:
+        db: Database session
+        test_id: Test UUID
+        filepath: Output file path
+    
+    Returns:
+        File path of generated Excel
+    """
+    # Get test and results
+    stmt = select(Test).where(Test.id == test_id)
+    result = await db.execute(stmt)
+    test = result.scalars().first()
+    
+    stmt = select(Result).where(Result.test_id == test_id).order_by(Result.submitted_at)
+    result = await db.execute(stmt)
+    results = result.scalars().all()
+    
+    # Get answer key for written question grading info
+    from app.models.test import AnswerKey
+    stmt = select(AnswerKey).where(AnswerKey.test_id == test_id)
+    ak_result = await db.execute(stmt)
+    answer_key = ak_result.scalars().first()
+    written_answers_key = (answer_key.written_questions or {}) if answer_key else {}
+    
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Test Results"
+    
+    # Headers: Name, Surname, Region, Correct, Q1-Q35, Q36a, Q36b, Q37a, Q37b
+    headers = ["Name", "Surname", "Region", "Correct"]
+    for i in range(1, 36):
+        headers.append(f"Q{i}")
+    headers.extend(["Q36a", "Q36b", "Q37a", "Q37b"])
+    
+    ws.append(headers)
+    
+    # Style headers
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Color fills
+    green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+    green_font = Font(color="006100")
+    red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+    red_font = Font(color="9C0006")
+    
+    # Data rows
+    for result_record in results:
+        # Get user
+        stmt = select(User).where(User.id == result_record.user_id)
+        user_result = await db.execute(stmt)
+        user = user_result.scalars().first()
+        
+        # Get MCQ answers
+        stmt = select(MCQAnswer).where(MCQAnswer.result_id == result_record.id).order_by(MCQAnswer.question_number)
+        mcq_result = await db.execute(stmt)
+        mcq_answers = mcq_result.scalars().all()
+        
+        # Get written answers
+        from app.models.result import WrittenAnswer
+        stmt = select(WrittenAnswer).where(WrittenAnswer.result_id == result_record.id).order_by(WrittenAnswer.question_number)
+        written_result = await db.execute(stmt)
+        written_answers = written_result.scalars().all()
+        
+        row_data = [
+            user.full_name,
+            user.surname,
+            user.region,
+            result_record.total_score
+        ]
+        
+        # Add MCQ answers as 0/1 (Q1-Q35)
+        mcq_dict = {ans.question_number: ans for ans in mcq_answers}
+        for q_num in range(1, 36):
+            ans = mcq_dict.get(q_num)
+            if ans:
+                row_data.append(1 if ans.is_correct else 0)
+            else:
+                row_data.append(0)
+        
+        # Add written answers as 0/1 per sub-part (Q36a, Q36b, Q37a, Q37b)
+        written_dict = {ans.question_number: ans for ans in written_answers}
+        for q_num in [36, 37]:
+            written_ans = written_dict.get(q_num)
+            correct_ans = written_answers_key.get(str(q_num), {})
+            
+            if written_ans and written_ans.student_answer:
+                import json as _json
+                try:
+                    student = _json.loads(written_ans.student_answer)
+                except (ValueError, TypeError):
+                    student = {}
+                
+                # Compare sub-part a
+                s_a = str(student.get('a', '')).strip().lower() if student.get('a') else ''
+                c_a = str(correct_ans.get('a', '')).strip().lower() if correct_ans.get('a') else ''
+                row_data.append(1 if (s_a and c_a and s_a == c_a) else 0)
+                
+                # Compare sub-part b
+                s_b = str(student.get('b', '')).strip().lower() if student.get('b') else ''
+                c_b = str(correct_ans.get('b', '')).strip().lower() if correct_ans.get('b') else ''
+                row_data.append(1 if (s_b and c_b and s_b == c_b) else 0)
+            else:
+                row_data.append(0)  # Q_a
+                row_data.append(0)  # Q_b
+        
+        row_num = ws.max_row + 1
+        ws.append(row_data)
+        
+        # Color code all answer cells (columns 5 onwards = Q1 starts at col 5)
+        for col_offset in range(len(row_data) - 4):
+            col_num = 5 + col_offset
+            cell = ws.cell(row=row_num, column=col_num)
+            value = row_data[4 + col_offset]
+            
+            if value == 1:
+                cell.fill = green_fill
+                cell.font = green_font
+            else:
+                cell.fill = red_fill
+                cell.font = red_font
+            
+            cell.alignment = Alignment(horizontal="center")
+    
+    # Auto-size columns
+    for col_num in range(1, len(headers) + 1):
+        column_letter = get_column_letter(col_num)
+        ws.column_dimensions[column_letter].width = 10
+    
+    # Wider columns for Name, Surname, Region
+    ws.column_dimensions['A'].width = 15
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 10
+    
+    # Save
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    wb.save(filepath)
+    
+    return filepath
+
+
+async def export_results_to_pdf(db: AsyncSession, test_id: UUID, filepath: str) -> str:
+    """
+    Export test results to PDF file.
+    Shows 0 (wrong) / 1 (correct) for each question, matching Excel format.
+    
+    Args:
+        db: Database session
+        test_id: Test UUID
+        filepath: Output file path
+    
+    Returns:
+        File path of generated PDF
+    """
+    import json as _json
+    from reportlab.lib.pagesizes import A3
+    
+    # Get test and results
+    stmt = select(Test).where(Test.id == test_id)
+    result = await db.execute(stmt)
+    test = result.scalars().first()
+    
+    stmt = select(Result).where(Result.test_id == test_id).order_by(Result.submitted_at)
+    result = await db.execute(stmt)
+    results = result.scalars().all()
+    
+    # Get answer key for written question grading
+    from app.models.test import AnswerKey
+    stmt = select(AnswerKey).where(AnswerKey.test_id == test_id)
+    ak_result = await db.execute(stmt)
+    answer_key = ak_result.scalars().first()
+    written_answers_key = (answer_key.written_questions or {}) if answer_key else {}
+    
+    # Create PDF - use landscape A3 to fit all columns
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    doc = SimpleDocTemplate(
+        filepath,
+        pagesize=landscape(A3),
+        leftMargin=0.3*inch,
+        rightMargin=0.3*inch,
+        topMargin=0.5*inch,
+        bottomMargin=0.5*inch
+    )
+    elements = []
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=20,
+        textColor=colors.HexColor('#1a365d'),
+        spaceAfter=20,
+        alignment=1  # Center
+    )
+    
+    # Title
+    title = Paragraph(f"Test Results: {test.title}", title_style)
+    elements.append(title)
+    
+    # Summary line
+    summary_style = ParagraphStyle(
+        'Summary',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.grey,
+        alignment=1
+    )
+    summary = Paragraph(
+        f"Students: {len(results)} | Code: {test.test_code} | Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+        summary_style
+    )
+    elements.append(summary)
+    elements.append(Spacer(1, 0.3 * inch))
+    
+    # Headers: Name, Surname, Region, Correct, Q1-Q35, Q36a, Q36b, Q37a, Q37b
+    headers = ["Name", "Surname", "Region", "Bal"]
+    for i in range(1, 36):
+        headers.append(f"Q{i}")
+    headers.extend(["36a", "36b", "37a", "37b"])
+    
+    table_data = [headers]
+    
+    # Track which cells are correct/wrong for coloring
+    cell_values = []  # list of lists, each inner list is the 0/1 values for that row
+    
+    for result_record in results:
+        # Get user
+        stmt = select(User).where(User.id == result_record.user_id)
+        user_result = await db.execute(stmt)
+        user = user_result.scalars().first()
+        
+        # Get MCQ answers
+        stmt = select(MCQAnswer).where(MCQAnswer.result_id == result_record.id).order_by(MCQAnswer.question_number)
+        mcq_result = await db.execute(stmt)
+        mcq_answers = mcq_result.scalars().all()
+        
+        # Get written answers
+        from app.models.result import WrittenAnswer
+        stmt = select(WrittenAnswer).where(WrittenAnswer.result_id == result_record.id).order_by(WrittenAnswer.question_number)
+        written_result = await db.execute(stmt)
+        written_answers = written_result.scalars().all()
+        
+        row = [
+            user.full_name or "",
+            user.surname or "",
+            user.region or "",
+            str(result_record.total_score)
+        ]
+        
+        row_values = []
+        
+        # MCQ answers as 0/1
+        mcq_dict = {ans.question_number: ans for ans in mcq_answers}
+        for q_num in range(1, 36):
+            ans = mcq_dict.get(q_num)
+            val = 1 if (ans and ans.is_correct) else 0
+            row.append(str(val))
+            row_values.append(val)
+        
+        # Written answers as 0/1 per sub-part
+        written_dict = {ans.question_number: ans for ans in written_answers}
+        for q_num in [36, 37]:
+            written_ans = written_dict.get(q_num)
+            correct_ans = written_answers_key.get(str(q_num), {})
+            
+            if written_ans and written_ans.student_answer:
+                try:
+                    student = _json.loads(written_ans.student_answer)
+                except (ValueError, TypeError):
+                    student = {}
+                
+                s_a = str(student.get('a', '')).strip().lower() if student.get('a') else ''
+                c_a = str(correct_ans.get('a', '')).strip().lower() if correct_ans.get('a') else ''
+                val_a = 1 if (s_a and c_a and s_a == c_a) else 0
+                
+                s_b = str(student.get('b', '')).strip().lower() if student.get('b') else ''
+                c_b = str(correct_ans.get('b', '')).strip().lower() if correct_ans.get('b') else ''
+                val_b = 1 if (s_b and c_b and s_b == c_b) else 0
+            else:
+                val_a = 0
+                val_b = 0
+            
+            row.append(str(val_a))
+            row.append(str(val_b))
+            row_values.append(val_a)
+            row_values.append(val_b)
+        
+        table_data.append(row)
+        cell_values.append(row_values)
+    
+    # Calculate column widths
+    # Name/Surname/Region get more space, question columns are narrow
+    name_width = 0.9 * inch
+    q_width = 0.28 * inch
+    bal_width = 0.35 * inch
+    
+    col_widths = [name_width, name_width, name_width, bal_width]
+    col_widths.extend([q_width] * 39)  # Q1-Q35 + Q36a,Q36b,Q37a,Q37b
+    
+    results_table = Table(table_data, colWidths=col_widths)
+    
+    # Base table style
+    style_commands = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 6),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        # Left-align name columns
+        ('ALIGN', (0, 1), (2, -1), 'LEFT'),
+    ]
+    
+    # Color code answer cells (col 4 onwards = Q1, row 1 onwards = data)
+    green_bg = colors.HexColor('#C6EFCE')
+    red_bg = colors.HexColor('#FFC7CE')
+    
+    for row_idx, row_vals in enumerate(cell_values):
+        data_row = row_idx + 1  # +1 for header
+        for col_idx, val in enumerate(row_vals):
+            data_col = col_idx + 4  # +4 for Name, Surname, Region, Bal
+            if val == 1:
+                style_commands.append(('BACKGROUND', (data_col, data_row), (data_col, data_row), green_bg))
+                style_commands.append(('TEXTCOLOR', (data_col, data_row), (data_col, data_row), colors.HexColor('#006100')))
+            else:
+                style_commands.append(('BACKGROUND', (data_col, data_row), (data_col, data_row), red_bg))
+                style_commands.append(('TEXTCOLOR', (data_col, data_row), (data_col, data_row), colors.HexColor('#9C0006')))
+    
+    results_table.setStyle(TableStyle(style_commands))
+    elements.append(results_table)
+    
+    # Build PDF
+    doc.build(elements)
+    
+    return filepath
