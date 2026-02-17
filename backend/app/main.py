@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     
     # Initialize database (only on first deploy)
     # For Railway, use migrations or manual init
-    # await init_db()
+    await init_db()
     
     yield
     
