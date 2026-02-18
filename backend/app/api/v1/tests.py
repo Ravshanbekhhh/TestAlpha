@@ -114,14 +114,28 @@ async def get_test_with_key(
     # Get answer key
     answer_key = await get_answer_key(db, test_id)
     
-    response = TestWithAnswerKey.model_validate(test)
+    # Build response dict manually to avoid lazy-loading ORM relationships
+    test_dict = {
+        "id": test.id,
+        "test_code": test.test_code,
+        "title": test.title,
+        "description": test.description,
+        "pdf_file_path": test.pdf_file_path,
+        "is_active": test.is_active,
+        "start_time": test.start_time,
+        "end_time": test.end_time,
+        "extra_minutes": test.extra_minutes,
+        "created_at": test.created_at,
+        "answer_key": None
+    }
+    
     if answer_key:
-        response.answer_key = {
+        test_dict["answer_key"] = {
             "mcq_answers": answer_key.mcq_answers,
             "written_questions": answer_key.written_questions
         }
     
-    return response
+    return test_dict
 
 
 @router.get("/", response_model=List[TestResponse])

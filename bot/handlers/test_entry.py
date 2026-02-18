@@ -65,17 +65,20 @@ async def process_test_code(message: Message, state: FSMContext):
             return
         
         # Check time window
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
+        from datetime import datetime, timedelta, timezone
+        uz_tz = timezone(timedelta(hours=5))
+        now = datetime.now(uz_tz).replace(tzinfo=None)  # UZ local time without timezone info
         
         if test.get('start_time'):
-            start_time = datetime.fromisoformat(test['start_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            start_str = test['start_time'].replace('Z', '').replace('+00:00', '')
+            # Remove fractional seconds if present
+            if '.' in start_str:
+                start_str = start_str.split('.')[0]
+            start_time = datetime.fromisoformat(start_str)
             if now < start_time:
-                # Convert to UZ time (UTC+5)
-                uz_start = start_time + timedelta(hours=5)
                 await message.answer(
                     f"⏰ <b>Test hali boshlanmadi!</b>\n\n"
-                    f"Test boshlanish vaqti: {uz_start.strftime('%d.%m.%Y %H:%M')}\n\n"
+                    f"Test boshlanish vaqti: {start_time.strftime('%d.%m.%Y %H:%M')}\n\n"
                     "O'sha vaqtda qayta urinib ko'ring.",
                     parse_mode="HTML",
                     reply_markup=get_main_menu()
@@ -84,7 +87,10 @@ async def process_test_code(message: Message, state: FSMContext):
                 return
         
         if test.get('end_time'):
-            end_time = datetime.fromisoformat(test['end_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            end_str = test['end_time'].replace('Z', '').replace('+00:00', '')
+            if '.' in end_str:
+                end_str = end_str.split('.')[0]
+            end_time = datetime.fromisoformat(end_str)
             extra = test.get('extra_minutes', 0)
             effective_end = end_time + timedelta(minutes=extra)
             if now >= effective_end:
@@ -114,7 +120,10 @@ async def process_test_code(message: Message, state: FSMContext):
         
         # Calculate remaining time display
         if test.get('end_time'):
-            end_time = datetime.fromisoformat(test['end_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            end_str = test['end_time'].replace('Z', '').replace('+00:00', '')
+            if '.' in end_str:
+                end_str = end_str.split('.')[0]
+            end_time = datetime.fromisoformat(end_str)
             extra = test.get('extra_minutes', 0)
             effective_end = end_time + timedelta(minutes=extra)
             remaining_minutes = max(0, int((effective_end - now).total_seconds() / 60))
