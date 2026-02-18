@@ -430,3 +430,152 @@ table td {
 .hidden {
     display: none;
 }
+
+/* ===== Mobile Responsive ===== */
+@media (max-width: 768px) {
+    .admin-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 10px 15px;
+    }
+
+    .logo {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .menu {
+        display: flex;
+        overflow-x: auto;
+        gap: 5px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .menu li {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .menu a {
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    .page h1 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    .stat-number {
+        font-size: 24px;
+    }
+
+    .stat-card h3 {
+        font-size: 12px;
+    }
+
+    .test-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .test-card-actions {
+        flex-wrap: wrap;
+    }
+
+    .test-card button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    #mcq-answers-grid,
+    #edit-mcq-answers-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .login-card {
+        margin: 15px;
+        padding: 25px;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        max-height: 85vh;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary {
+        width: 100%;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    table th,
+    table td {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    .grading-form {
+        flex-direction: column;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px;
+        /* Prevents iOS zoom on focus */
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #mcq-answers-grid,
+    #edit-mcq-answers-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .login-card {
+        margin: 10px;
+        padding: 20px;
+    }
+
+    .login-card h1 {
+        font-size: 22px;
+    }
+}

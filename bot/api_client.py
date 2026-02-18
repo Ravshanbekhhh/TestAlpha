@@ -98,6 +98,24 @@ class APIClient:
         async with session.get(url) as response:
             response.raise_for_status()
             return await response.json()
+    
+    async def update_user(self, telegram_id: int, full_name: str, surname: str, region: str) -> Dict:
+        """
+        Update existing user info (for re-registration).
+        """
+        session = await self._get_session()
+        url = f"{self.base_url}/api/v1/users/telegram/{telegram_id}"
+        
+        data = {
+            "telegram_id": telegram_id,
+            "full_name": full_name,
+            "surname": surname,
+            "region": region
+        }
+        
+        async with session.put(url, json=data) as response:
+            response.raise_for_status()
+            return await response.json()
 
 
 # Global API client instance

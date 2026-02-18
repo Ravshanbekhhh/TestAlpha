@@ -17,8 +17,11 @@ def get_inline_menu(registered: bool = False):
     if registered:
         # Registered user - show test button and results
         buttons.append([InlineKeyboardButton(text="✅ Testni boshlash", callback_data="start_test")])
-        buttons.append([InlineKeyboardButton(text="📊 Natijalarim", callback_data="my_results")])
-        buttons.append([InlineKeyboardButton(text="📈 Test tahlili", callback_data="test_analytics")])
+        buttons.append([
+            InlineKeyboardButton(text="📊 Natijalarim", callback_data="my_results"),
+            InlineKeyboardButton(text="📈 Test tahlili", callback_data="test_analytics")
+        ])
+        buttons.append([InlineKeyboardButton(text="🔄 Qayta ro'yxatdan o'tish", callback_data="re_register")])
     else:
         # Not registered - show register button
         buttons.append([InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")])

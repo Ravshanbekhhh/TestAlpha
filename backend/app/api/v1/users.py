@@ -89,3 +89,31 @@ async def get_user_by_telegram_id(
         )
     
     return user
+
+
+@router.put("/telegram/{telegram_id}", response_model=UserResponse)
+async def update_user_by_telegram_id(
+    telegram_id: int,
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """Update user info by Telegram ID (for re-registration)."""
+    stmt = select(User).where(User.telegram_id == telegram_id)
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    user.full_name = user_data.full_name
+    user.surname = user_data.surname
+    user.region = user_data.region
+    
+    await db.commit()
+    await db.refresh(user)
+    
+    return user
+

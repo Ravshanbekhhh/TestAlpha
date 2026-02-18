@@ -91,29 +91,50 @@ async def process_region(message: Message, state: FSMContext):
         return
     
     data = await state.get_data()
+    is_re_register = data.get('is_re_register', False)
     
     try:
-        # Register user via API
-        user = await api_client.register_user(
-            telegram_id=message.from_user.id,
-            full_name=data['full_name'],
-            surname=data['surname'],
-            region=message.text
-        )
-        
-        await state.clear()
-        await message.answer(
-            f"✅ <b>Ro'yxatdan o'tish muvaffaqiyatli!</b>\n\n"
-            f"Ism: {user['full_name']} {user['surname']}\n"
-            f"Viloyat: {user['region']}\n\n"
-            "Endi testlarni ishlashingiz mumkin! 🎓",
-            parse_mode="HTML",
-            reply_markup=get_main_menu()
-        )
+        if is_re_register:
+            # Update existing user
+            user = await api_client.update_user(
+                telegram_id=message.from_user.id,
+                full_name=data['full_name'],
+                surname=data['surname'],
+                region=message.text
+            )
+            
+            await state.clear()
+            await message.answer(
+                f"✅ <b>Ma'lumotlaringiz yangilandi!</b>\n\n"
+                f"Ism: {user['full_name']} {user['surname']}\n"
+                f"Viloyat: {user['region']}\n\n"
+                "Testlarni ishlashingiz mumkin! 🎓",
+                parse_mode="HTML",
+                reply_markup=get_main_menu()
+            )
+        else:
+            # Register new user
+            user = await api_client.register_user(
+                telegram_id=message.from_user.id,
+                full_name=data['full_name'],
+                surname=data['surname'],
+                region=message.text
+            )
+            
+            await state.clear()
+            await message.answer(
+                f"✅ <b>Ro'yxatdan o'tish muvaffaqiyatli!</b>\n\n"
+                f"Ism: {user['full_name']} {user['surname']}\n"
+                f"Viloyat: {user['region']}\n\n"
+                "Endi testlarni ishlashingiz mumkin! 🎓",
+                parse_mode="HTML",
+                reply_markup=get_main_menu()
+            )
     except Exception as e:
         await message.answer(
-            f"❌ Ro'yxatdan o'tishda xatolik: {str(e)}\n\n"
-            "Iltimos, /register buyrug'i bilan qayta urinib ko'ring",
+            f"❌ Xatolik: {str(e)}\n\n"
+            "Iltimos, /start buyrug'i bilan qayta urinib ko'ring",
             reply_markup=get_main_menu()
         )
         await state.clear()
+

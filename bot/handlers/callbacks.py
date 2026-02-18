@@ -86,3 +86,17 @@ async def callback_test_analytics(callback: CallbackQuery):
         parse_mode="HTML"
     )
     await callback.answer()
+
+
+@router.callback_query(F.data == "re_register")
+async def callback_re_register(callback: CallbackQuery, state: FSMContext):
+    """Handle re-registration button"""
+    await state.update_data(is_re_register=True)
+    await callback.message.edit_text(
+        "🔄 <b>Qayta ro'yxatdan o'tish</b>\n\n"
+        "Iltimos, <b>yangi ismingizni</b> kiriting:",
+        parse_mode="HTML"
+    )
+    await state.set_state(RegistrationStates.waiting_for_full_name)
+    await callback.answer()
+

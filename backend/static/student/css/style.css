@@ -322,3 +322,84 @@ body {
         font-size: 24px;
     }
 }
+
+@media (max-width: 480px) {
+    body {
+        padding: 6px;
+    }
+
+    .container {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .timer-section {
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    .timer-display {
+        font-size: 28px;
+        margin: 6px 0;
+    }
+
+    .timer-label {
+        font-size: 11px;
+    }
+
+    .test-header {
+        margin-bottom: 20px;
+    }
+
+    .test-header h1 {
+        font-size: 20px;
+    }
+
+    .test-header p {
+        font-size: 13px;
+    }
+
+    .section {
+        margin-bottom: 20px;
+    }
+
+    .section h2 {
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+
+    .instructions {
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .mcq-item {
+        padding: 10px;
+    }
+
+    .option-btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .written-item {
+        padding: 12px;
+    }
+
+    .written-textarea {
+        min-height: 80px;
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    .submit-section {
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+    }
+}

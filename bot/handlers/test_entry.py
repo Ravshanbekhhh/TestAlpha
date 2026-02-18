@@ -3,7 +3,7 @@ Test entry handler - for entering test code and getting test link.
 """
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from aiogram.utils.markdown import hbold
 
 from states.registration import TestEntryStates
@@ -111,7 +111,7 @@ async def process_test_code(message: Message, state: FSMContext):
             )
         else:
             inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📝 Testni boshlash", url=test_url)]
+                [InlineKeyboardButton(text="📝 Testni boshlash", web_app=WebAppInfo(url=test_url))]
             ])
             await message.answer(
                 msg_text,
