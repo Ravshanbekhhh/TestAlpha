@@ -68,9 +68,26 @@ async def get_db() -> AsyncSession:
 
 
 async def init_db():
-    """Initialize database tables. Only for development."""
+    """Initialize database tables and run migrations."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        
+        # Run migrations for new columns on existing tables
+        if not is_sqlite:
+            from sqlalchemy import text
+            migrations = [
+                # Test table - time scheduling columns
+                "ALTER TABLE tests ADD COLUMN IF NOT EXISTS start_time TIMESTAMP",
+                "ALTER TABLE tests ADD COLUMN IF NOT EXISTS end_time TIMESTAMP",
+                "ALTER TABLE tests ADD COLUMN IF NOT EXISTS extra_minutes INTEGER DEFAULT 0",
+                # TestSession table - per-session extension tracking
+                "ALTER TABLE test_sessions ADD COLUMN IF NOT EXISTS extra_minutes INTEGER DEFAULT 0",
+            ]
+            for sql in migrations:
+                try:
+                    await conn.execute(text(sql))
+                except Exception:
+                    pass  # Column already exists or table doesn't exist yet
 
 
 async def close_db():
