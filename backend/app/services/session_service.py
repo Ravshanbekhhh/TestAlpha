@@ -30,6 +30,18 @@ async def create_session(db: AsyncSession, user_id: UUID, test_id: UUID) -> Opti
         if not test:
             return None
         
+        # Delete any old unsubmitted sessions for this user+test
+        # (allows retry if previous session expired without submitting)
+        from sqlalchemy import delete, and_
+        cleanup_stmt = delete(TestSession).where(
+            and_(
+                TestSession.user_id == user_id,
+                TestSession.test_id == test_id,
+                TestSession.is_submitted == False
+            )
+        )
+        await db.execute(cleanup_stmt)
+        
         now = datetime.utcnow()
         
         # Check time window if test has scheduled times
@@ -99,10 +111,11 @@ async def mark_session_submitted(db: AsyncSession, session_id: UUID) -> Optional
 
 
 async def check_user_attempted_test(db: AsyncSession, user_id: UUID, test_id: UUID) -> bool:
-    """Check if user has already attempted this test."""
+    """Check if user has already submitted this test (only counts submitted sessions)."""
     stmt = select(TestSession).where(
         TestSession.user_id == user_id,
-        TestSession.test_id == test_id
+        TestSession.test_id == test_id,
+        TestSession.is_submitted == True
     )
     result = await db.execute(stmt)
     session = result.scalars().first()
