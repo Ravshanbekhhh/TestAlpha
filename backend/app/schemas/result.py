@@ -75,6 +75,7 @@ class WrittenAnswerGrade(BaseModel):
 class UserResultSummary(BaseModel):
     """Schema for user's test result summary (for Telegram bot)."""
     test_title: str
+    test_code: str = ""
     mcq_score: int
     mcq_total: int = 35
     written_score: int

@@ -40,7 +40,19 @@ async def callback_my_results(callback: CallbackQuery):
     from api_client import api_client
     
     try:
-        results = await api_client.get_user_results(callback.from_user.id)
+        # First get user by telegram_id to get UUID
+        user = await api_client.get_user_by_telegram_id(callback.from_user.id)
+        
+        if not user:
+            await callback.message.edit_text(
+                "❌ Siz hali ro'yxatdan o'tmagansiz.\n\n"
+                "/start buyrug'ini yuboring.",
+                parse_mode="HTML"
+            )
+            await callback.answer()
+            return
+        
+        results = await api_client.get_user_results(user['id'])
         
         if not results:
             await callback.message.edit_text(
@@ -55,15 +67,13 @@ async def callback_my_results(callback: CallbackQuery):
         text = "📊 <b>Sizning natijalaringiz:</b>\n\n"
         
         for i, result in enumerate(results, 1):
+            test_code = result.get('test_code', '')
             text += f"<b>{i}. {result.get('test_title', 'Test')}</b>\n"
-            text += f"   📝 MCQ: {result['mcq_score']}/35\n"
-            
-            if result['written_score'] is not None:
-                text += f"   ✍️ Yozma: {result['written_score']}/100\n"
-                text += f"   ⭐️ Jami: {result['total_score']}/135\n"
-            else:
-                text += f"   ✍️ Yozma: ⏳ Tekshirilmoqda...\n"
-            
+            if test_code:
+                text += f"   🔑 Kod: {test_code}\n"
+            text += f"   📝 Test: {result['mcq_score']}/{result.get('mcq_total', 35)}\n"
+            text += f"   ✍️ Yozma: {result['written_score']}/{result.get('written_total', 2)}\n"
+            text += f"   ⭐️ Jami: {result['total_score']}\n"
             text += f"   📅 Sana: {result['submitted_at'][:10]}\n\n"
         
         await callback.message.edit_text(text, parse_mode="HTML")

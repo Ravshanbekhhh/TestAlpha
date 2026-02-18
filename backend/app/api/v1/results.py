@@ -134,6 +134,7 @@ async def get_user_results_endpoint(
         
         summaries.append(UserResultSummary(
             test_title=test.title if test else "Unknown Test",
+            test_code=test.test_code if test else "",
             mcq_score=result.mcq_score,
             written_score=result.written_score,
             total_score=result.total_score,
