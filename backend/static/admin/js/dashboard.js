@@ -393,7 +393,7 @@ document.getElementById('create-test-form').addEventListener('submit', async (e)
 });
 
 // Expose functions globally
-window.submitGrade = submitGrade;
+
 window.exportExcel = exportExcel;
 window.exportPDF = exportPDF;
 window.deleteTest = deleteTest;
