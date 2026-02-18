@@ -267,3 +267,44 @@ async def extend_session_endpoint(
         "extra_minutes": session.extra_minutes,
         "extensions_left": max(0, 3 - (session.extra_minutes // 5))
     }
+
+
+@router.post("/tests/{test_id}/extend-all")
+async def extend_all_sessions_endpoint(
+    test_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Extend ALL active sessions for a test by 5 minutes (admin only).
+    Each session has its own max of 15 minutes (3 extensions).
+    """
+    from app.models.session import TestSession
+    from datetime import datetime, timedelta
+    
+    stmt = select(TestSession).where(
+        TestSession.test_id == test_id,
+        TestSession.is_submitted == False,
+        TestSession.is_expired == False
+    )
+    result = await db.execute(stmt)
+    sessions = result.scalars().all()
+    
+    extended = 0
+    skipped = 0
+    for s in sessions:
+        if s.extra_minutes >= 15:
+            skipped += 1
+            continue
+        s.extra_minutes += 5
+        s.expires_at = s.expires_at + timedelta(minutes=5)
+        extended += 1
+    
+    await db.commit()
+    
+    return {
+        "message": f"{extended} ta sessiya 5 daqiqa uzaytirildi",
+        "extended": extended,
+        "skipped": skipped,
+        "total": len(sessions)
+    }

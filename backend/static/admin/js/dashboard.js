@@ -82,7 +82,7 @@ async function loadTests() {
                         <button class="btn-export" onclick="exportExcel('${test.id}')">📊 Excel yuklab olish</button>
                         <button class="btn-export" onclick="exportPDF('${test.id}')">📄 PDF yuklab olish</button>
                         <button class="btn-edit" onclick="openEditModal('${test.id}')">✏️ Tahrirlash</button>
-                        <button class="btn-primary" onclick="openSessionsModal('${test.id}', '${test.title}')">📋 Sessiyalar</button>
+                        <button class="btn-primary" onclick="extendAllSessions('${test.id}', '${test.title}')">⏱️ +5 min</button>
                         <button class="btn-delete" onclick="deleteTest('${test.id}', '${test.title}')">🗑️ O'chirish</button>
                         <button class="btn-reset" onclick="clearSessions('${test.id}', '${test.title}')">🔄 Sessiyalarni tozalash</button>
                     </div>
@@ -210,6 +210,9 @@ async function openEditModal(testId) {
     try {
         // Load test data with answer key
         const response = await apiRequest(`/api/v1/tests/${testId}`);
+        if (!response.ok) {
+            throw new Error(`Server xatosi (${response.status})`);
+        }
         const test = await response.json();
 
         // Fill in basic fields
@@ -428,77 +431,25 @@ window.exportPDF = exportPDF;
 window.deleteTest = deleteTest;
 window.openEditModal = openEditModal;
 window.clearSessions = clearSessions;
-window.openSessionsModal = openSessionsModal;
-window.extendSession = extendSession;
+window.extendAllSessions = extendAllSessions;
 
 // ==========================================
-// SESSIONS MODAL
+// EXTEND ALL SESSIONS (+5 min)
 // ==========================================
-let currentSessionsTestId = null;
-
-async function openSessionsModal(testId, testTitle) {
-    currentSessionsTestId = testId;
-    const content = document.getElementById('sessions-list-content');
-    content.innerHTML = '<p>Yuklanmoqda...</p>';
-    document.getElementById('sessions-modal').classList.remove('hidden');
-
-    try {
-        const response = await apiRequest(`/api/v1/admin/sessions/${testId}/list`);
-        const sessions = await response.json();
-
-        if (sessions.length === 0) {
-            content.innerHTML = '<p>Bu testda hali sessiyalar yo\'q.</p>';
-            return;
-        }
-
-        let html = '<table><tr><th>Talaba</th><th>Viloyat</th><th>Boshlangan</th><th>Tugaydi</th><th>Holat</th><th>Qo\'shimcha</th><th>Amal</th></tr>';
-        sessions.forEach(s => {
-            const status = s.is_submitted ? '✅ Topshirilgan' : (s.is_expired ? '⏰ Muddati tugagan' : '🟢 Faol');
-            const startedAt = s.started_at ? new Date(s.started_at).toLocaleString('uz-UZ') : '-';
-            const expiresAt = s.expires_at ? new Date(s.expires_at).toLocaleString('uz-UZ') : '-';
-            const extendBtn = (!s.is_submitted && !s.is_expired && s.extensions_left > 0)
-                ? `<button class="btn-primary" style="font-size:12px;padding:4px 8px" onclick="extendSession('${s.id}')">
-                     +5 min (${s.extensions_left} qoldi)
-                   </button>`
-                : (s.extensions_left <= 0 ? '<span style="color:#999">Limit tugadi</span>' : '-');
-
-            html += `<tr>
-                <td>${s.user_name}</td>
-                <td>${s.user_region}</td>
-                <td>${startedAt}</td>
-                <td>${expiresAt}</td>
-                <td>${status}</td>
-                <td>${s.extra_minutes} daqiqa</td>
-                <td>${extendBtn}</td>
-            </tr>`;
-        });
-        html += '</table>';
-        content.innerHTML = html;
-    } catch (error) {
-        content.innerHTML = '<p>Xatolik: ' + error.message + '</p>';
+async function extendAllSessions(testId, testTitle) {
+    if (!confirm(`"${testTitle}" testidagi barcha faol sessiyalarga +5 daqiqa qo'shilsinmi?`)) {
+        return;
     }
-}
-
-async function extendSession(sessionId) {
     try {
-        const response = await apiRequest(`/api/v1/admin/sessions/${sessionId}/extend`, {
+        const response = await apiRequest(`/api/v1/admin/tests/${testId}/extend-all`, {
             method: 'POST'
         });
         const data = await response.json();
-        alert(data.message + `\nYangi tugash vaqti: ${new Date(data.new_expires_at).toLocaleString('uz-UZ')}\nQolgan uzaytirish: ${data.extensions_left}`);
-        // Refresh sessions list
-        if (currentSessionsTestId) {
-            openSessionsModal(currentSessionsTestId, '');
-        }
+        alert(data.message + (data.skipped > 0 ? `\n${data.skipped} ta sessiya limitga yetgan` : ''));
     } catch (error) {
         alert('Xatolik: ' + error.message);
     }
 }
-
-document.getElementById('close-sessions-modal').addEventListener('click', () => {
-    document.getElementById('sessions-modal').classList.add('hidden');
-    currentSessionsTestId = null;
-});
 
 // Load dashboard on init
 if (isLoggedIn()) {
