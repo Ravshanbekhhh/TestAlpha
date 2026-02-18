@@ -37,7 +37,9 @@ async def create_test(
         description=test_data.description,
         pdf_file_path=pdf_filename,
         created_by_admin=admin_id,
-        is_active=True
+        is_active=True,
+        start_time=test_data.start_time,
+        end_time=test_data.end_time
     )
     
     db.add(test)
@@ -195,6 +197,10 @@ async def update_test_with_answers(
         test.is_active = test_data.is_active
     if test_data.test_code is not None:
         test.test_code = test_data.test_code.upper()
+    if test_data.start_time is not None:
+        test.start_time = test_data.start_time
+    if test_data.end_time is not None:
+        test.end_time = test_data.end_time
     
     # Update answer key if provided
     if test_data.answer_key is not None:

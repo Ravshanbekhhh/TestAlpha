@@ -183,3 +183,87 @@ async def clear_test_sessions(
         "sessions_deleted": len(sessions),
         "results_deleted": len(results)
     }
+
+
+@router.get("/sessions/{test_id}/list")
+async def list_test_sessions(
+    test_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    List all sessions for a test with user info (admin only).
+    Shows each student's session so admin can extend individually.
+    """
+    from app.models.session import TestSession
+    from sqlalchemy.orm import selectinload
+    
+    stmt = select(TestSession).options(
+        selectinload(TestSession.user)
+    ).where(
+        TestSession.test_id == test_id
+    ).order_by(TestSession.started_at.desc())
+    
+    result = await db.execute(stmt)
+    sessions = result.scalars().all()
+    
+    session_list = []
+    for s in sessions:
+        session_list.append({
+            "id": str(s.id),
+            "user_name": f"{s.user.full_name} {s.user.surname}" if s.user else "Noma'lum",
+            "user_region": s.user.region if s.user else "",
+            "started_at": s.started_at.isoformat() if s.started_at else None,
+            "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+            "is_submitted": s.is_submitted,
+            "is_expired": s.is_expired,
+            "extra_minutes": s.extra_minutes,
+            "extensions_left": max(0, 3 - (s.extra_minutes // 5))
+        })
+    
+    return session_list
+
+
+@router.post("/sessions/{session_id}/extend")
+async def extend_session_endpoint(
+    session_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Extend a specific session by 5 minutes (admin only).
+    Maximum 3 extensions (15 minutes total) per session.
+    """
+    from app.services.session_service import extend_session
+    
+    try:
+        session = await extend_session(db, session_id)
+    except ValueError as e:
+        error_msg = str(e)
+        if error_msg == "SESSION_ALREADY_SUBMITTED":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bu session allaqachon topshirilgan"
+            )
+        elif error_msg == "MAX_EXTENSIONS_REACHED":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maksimal uzaytirish chegarasiga yetildi (3 marta)"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session topilmadi"
+        )
+    
+    return {
+        "message": f"Session 5 daqiqa uzaytirildi",
+        "new_expires_at": session.expires_at.isoformat(),
+        "extra_minutes": session.extra_minutes,
+        "extensions_left": max(0, 3 - (session.extra_minutes // 5))
+    }

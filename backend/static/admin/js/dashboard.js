@@ -43,6 +43,23 @@ async function loadDashboard() {
     }
 }
 
+// Helper to format datetime
+function formatDateTime(isoStr) {
+    if (!isoStr) return 'Belgilanmagan';
+    const d = new Date(isoStr);
+    return d.toLocaleString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+// Helper to convert ISO to datetime-local input format
+function toDatetimeLocal(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    // Adjust for timezone offset
+    const offset = d.getTimezoneOffset();
+    const adjusted = new Date(d.getTime() - offset * 60 * 1000);
+    return adjusted.toISOString().slice(0, 16);
+}
+
 // Load tests
 async function loadTests() {
     try {
@@ -51,15 +68,21 @@ async function loadTests() {
 
         let html = '<div class="test-cards">';
         tests.forEach(test => {
+            const startStr = formatDateTime(test.start_time);
+            const endStr = formatDateTime(test.end_time);
             html += `
                 <div class="test-card">
                     <h3>${test.title}</h3>
                     <p>Kod: ${test.test_code}</p>
                     <p>${test.is_active ? '✅ Faol' : '❌ Nofaol'}</p>
+                    <p>⏰ Boshlanish: ${startStr}</p>
+                    <p>⏰ Tugash: ${endStr}</p>
+                    ${test.extra_minutes > 0 ? `<p>➕ Qo'shimcha: ${test.extra_minutes} daqiqa</p>` : ''}
                     <div class="test-card-actions">
                         <button class="btn-export" onclick="exportExcel('${test.id}')">📊 Excel yuklab olish</button>
                         <button class="btn-export" onclick="exportPDF('${test.id}')">📄 PDF yuklab olish</button>
                         <button class="btn-edit" onclick="openEditModal('${test.id}')">✏️ Tahrirlash</button>
+                        <button class="btn-primary" onclick="openSessionsModal('${test.id}', '${test.title}')">📋 Sessiyalar</button>
                         <button class="btn-delete" onclick="deleteTest('${test.id}', '${test.title}')">🗑️ O'chirish</button>
                         <button class="btn-reset" onclick="clearSessions('${test.id}', '${test.title}')">🔄 Sessiyalarni tozalash</button>
                     </div>
@@ -194,6 +217,8 @@ async function openEditModal(testId) {
         document.getElementById('edit-test-title').value = test.title;
         document.getElementById('edit-test-desc').value = test.description || '';
         document.getElementById('edit-test-active').checked = test.is_active;
+        document.getElementById('edit-test-start-time').value = toDatetimeLocal(test.start_time);
+        document.getElementById('edit-test-end-time').value = toDatetimeLocal(test.end_time);
 
         // Generate MCQ answer inputs
         let mcqGrid = '';
@@ -275,6 +300,8 @@ document.getElementById('edit-test-form').addEventListener('submit', async (e) =
         title: document.getElementById('edit-test-title').value,
         description: document.getElementById('edit-test-desc').value,
         is_active: document.getElementById('edit-test-active').checked,
+        start_time: document.getElementById('edit-test-start-time').value || null,
+        end_time: document.getElementById('edit-test-end-time').value || null,
         answer_key: {
             mcq_answers: mcqAnswers,
             written_questions: writtenQuestions
@@ -372,6 +399,8 @@ document.getElementById('create-test-form').addEventListener('submit', async (e)
         test_code: document.getElementById('test-code').value,
         title: document.getElementById('test-title').value,
         description: document.getElementById('test-desc').value || null,
+        start_time: document.getElementById('test-start-time').value || null,
+        end_time: document.getElementById('test-end-time').value || null,
         answer_key: {
             mcq_answers: mcqAnswers,
             written_questions: writtenQuestions
@@ -399,6 +428,77 @@ window.exportPDF = exportPDF;
 window.deleteTest = deleteTest;
 window.openEditModal = openEditModal;
 window.clearSessions = clearSessions;
+window.openSessionsModal = openSessionsModal;
+window.extendSession = extendSession;
+
+// ==========================================
+// SESSIONS MODAL
+// ==========================================
+let currentSessionsTestId = null;
+
+async function openSessionsModal(testId, testTitle) {
+    currentSessionsTestId = testId;
+    const content = document.getElementById('sessions-list-content');
+    content.innerHTML = '<p>Yuklanmoqda...</p>';
+    document.getElementById('sessions-modal').classList.remove('hidden');
+
+    try {
+        const response = await apiRequest(`/api/v1/admin/sessions/${testId}/list`);
+        const sessions = await response.json();
+
+        if (sessions.length === 0) {
+            content.innerHTML = '<p>Bu testda hali sessiyalar yo\'q.</p>';
+            return;
+        }
+
+        let html = '<table><tr><th>Talaba</th><th>Viloyat</th><th>Boshlangan</th><th>Tugaydi</th><th>Holat</th><th>Qo\'shimcha</th><th>Amal</th></tr>';
+        sessions.forEach(s => {
+            const status = s.is_submitted ? '✅ Topshirilgan' : (s.is_expired ? '⏰ Muddati tugagan' : '🟢 Faol');
+            const startedAt = s.started_at ? new Date(s.started_at).toLocaleString('uz-UZ') : '-';
+            const expiresAt = s.expires_at ? new Date(s.expires_at).toLocaleString('uz-UZ') : '-';
+            const extendBtn = (!s.is_submitted && !s.is_expired && s.extensions_left > 0)
+                ? `<button class="btn-primary" style="font-size:12px;padding:4px 8px" onclick="extendSession('${s.id}')">
+                     +5 min (${s.extensions_left} qoldi)
+                   </button>`
+                : (s.extensions_left <= 0 ? '<span style="color:#999">Limit tugadi</span>' : '-');
+
+            html += `<tr>
+                <td>${s.user_name}</td>
+                <td>${s.user_region}</td>
+                <td>${startedAt}</td>
+                <td>${expiresAt}</td>
+                <td>${status}</td>
+                <td>${s.extra_minutes} daqiqa</td>
+                <td>${extendBtn}</td>
+            </tr>`;
+        });
+        html += '</table>';
+        content.innerHTML = html;
+    } catch (error) {
+        content.innerHTML = '<p>Xatolik: ' + error.message + '</p>';
+    }
+}
+
+async function extendSession(sessionId) {
+    try {
+        const response = await apiRequest(`/api/v1/admin/sessions/${sessionId}/extend`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        alert(data.message + `\nYangi tugash vaqti: ${new Date(data.new_expires_at).toLocaleString('uz-UZ')}\nQolgan uzaytirish: ${data.extensions_left}`);
+        // Refresh sessions list
+        if (currentSessionsTestId) {
+            openSessionsModal(currentSessionsTestId, '');
+        }
+    } catch (error) {
+        alert('Xatolik: ' + error.message);
+    }
+}
+
+document.getElementById('close-sessions-modal').addEventListener('click', () => {
+    document.getElementById('sessions-modal').classList.add('hidden');
+    currentSessionsTestId = null;
+});
 
 // Load dashboard on init
 if (isLoggedIn()) {

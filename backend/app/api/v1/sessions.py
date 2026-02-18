@@ -35,7 +35,24 @@ async def start_session(
             detail="User has already attempted this test"
         )
     
-    session = await create_session(db, session_data.user_id, session_data.test_id)
+    try:
+        session = await create_session(db, session_data.user_id, session_data.test_id)
+    except ValueError as e:
+        error_msg = str(e)
+        if error_msg == "TEST_NOT_STARTED":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Test hali boshlanmadi"
+            )
+        elif error_msg == "TEST_ENDED":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Test vaqti tugagan"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     
     if not session:
         raise HTTPException(

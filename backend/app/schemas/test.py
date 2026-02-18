@@ -4,7 +4,7 @@ Test schemas for request/response validation.
 from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
-from typing import Dict
+from typing import Dict, Optional
 
 
 class AnswerKeyCreate(BaseModel):
@@ -18,6 +18,8 @@ class TestCreate(BaseModel):
     test_code: str = Field(..., min_length=1, max_length=50)
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
+    start_time: Optional[datetime] = None   # Test boshlanish vaqti
+    end_time: Optional[datetime] = None     # Test tugash vaqti
     answer_key: AnswerKeyCreate
 
 
@@ -29,6 +31,9 @@ class TestResponse(BaseModel):
     description: str | None
     pdf_file_path: str | None
     is_active: bool
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    extra_minutes: int = 0
     created_at: datetime
     
     class Config:
@@ -46,4 +51,6 @@ class TestUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     is_active: bool | None = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     answer_key: AnswerKeyCreate | None = None

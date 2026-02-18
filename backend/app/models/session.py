@@ -1,7 +1,7 @@
 """
 Test session model - tracks student test-taking sessions with timers.
 """
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, UniqueConstraint, Integer
 from app.models.types import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
@@ -23,6 +23,7 @@ class TestSession(Base):
     expires_at = Column(DateTime, nullable=False)
     is_submitted = Column(Boolean, default=False, nullable=False)
     is_expired = Column(Boolean, default=False, nullable=False)
+    extra_minutes = Column(Integer, default=0, nullable=False)  # Admin qo'shgan daqiqalar (max 15)
     
     # Unique constraint to prevent multiple attempts
     __table_args__ = (

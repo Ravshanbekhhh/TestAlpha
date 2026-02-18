@@ -1,7 +1,7 @@
 """
 Test and AnswerKey models.
 """
-from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -22,6 +22,9 @@ class Test(Base):
     pdf_file_path = Column(String(500))
     created_by_admin = Column(UUID(), ForeignKey("admin_users.id"))
     is_active = Column(Boolean, default=True, nullable=False)
+    start_time = Column(DateTime, nullable=True)   # Test boshlanish vaqti
+    end_time = Column(DateTime, nullable=True)       # Test tugash vaqti
+    extra_minutes = Column(Integer, default=0, nullable=False)  # Admin qo'shgan daqiqalar (max 15)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships

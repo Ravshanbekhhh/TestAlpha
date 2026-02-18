@@ -80,6 +80,14 @@
                     <label>Tavsif</label>
                     <textarea id="test-desc"></textarea>
                 </div>
+                <div class="form-group">
+                    <label>Boshlanish vaqti</label>
+                    <input type="datetime-local" id="test-start-time">
+                </div>
+                <div class="form-group">
+                    <label>Tugash vaqti</label>
+                    <input type="datetime-local" id="test-end-time">
+                </div>
                 <h3>Test javoblari (1-35)</h3>
                 <div id="mcq-answers-grid"></div>
                 <div class="modal-actions">
@@ -113,6 +121,14 @@
                         Faol
                     </label>
                 </div>
+                <div class="form-group">
+                    <label>Boshlanish vaqti</label>
+                    <input type="datetime-local" id="edit-test-start-time">
+                </div>
+                <div class="form-group">
+                    <label>Tugash vaqti</label>
+                    <input type="datetime-local" id="edit-test-end-time">
+                </div>
                 <h3>Test javoblari (1-35)</h3>
                 <div id="edit-mcq-answers-grid"></div>
                 <div class="modal-actions">
@@ -120,6 +136,17 @@
                     <button type="submit" class="btn-primary">💾 Saqlash</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Sessions Modal -->
+    <div class="modal hidden" id="sessions-modal">
+        <div class="modal-content">
+            <h2>📋 Sessiyalar</h2>
+            <div id="sessions-list-content"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="close-sessions-modal">Yopish</button>
+            </div>
         </div>
     </div>
 

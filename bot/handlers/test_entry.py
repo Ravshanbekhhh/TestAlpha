@@ -64,6 +64,39 @@ async def process_test_code(message: Message, state: FSMContext):
             )
             return
         
+        # Check time window
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        
+        if test.get('start_time'):
+            start_time = datetime.fromisoformat(test['start_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            if now < start_time:
+                # Convert to UZ time (UTC+5)
+                uz_start = start_time + timedelta(hours=5)
+                await message.answer(
+                    f"⏰ <b>Test hali boshlanmadi!</b>\n\n"
+                    f"Test boshlanish vaqti: {uz_start.strftime('%d.%m.%Y %H:%M')}\n\n"
+                    "O'sha vaqtda qayta urinib ko'ring.",
+                    parse_mode="HTML",
+                    reply_markup=get_main_menu()
+                )
+                await state.clear()
+                return
+        
+        if test.get('end_time'):
+            end_time = datetime.fromisoformat(test['end_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            extra = test.get('extra_minutes', 0)
+            effective_end = end_time + timedelta(minutes=extra)
+            if now >= effective_end:
+                await message.answer(
+                    "❌ <b>Test vaqti tugagan!</b>\n\n"
+                    "Bu testni ishlash uchun belgilangan vaqt tugadi.",
+                    parse_mode="HTML",
+                    reply_markup=get_main_menu()
+                )
+                await state.clear()
+                return
+        
         # Get user
         user = await api_client.get_user_by_telegram_id(message.from_user.id)
         
@@ -79,6 +112,18 @@ async def process_test_code(message: Message, state: FSMContext):
             await state.clear()
             return
         
+        # Calculate remaining time display
+        if test.get('end_time'):
+            end_time = datetime.fromisoformat(test['end_time'].replace('Z', '+00:00')).replace(tzinfo=None)
+            extra = test.get('extra_minutes', 0)
+            effective_end = end_time + timedelta(minutes=extra)
+            remaining_minutes = max(0, int((effective_end - now).total_seconds() / 60))
+            hours = remaining_minutes // 60
+            mins = remaining_minutes % 60
+            time_str = f"{hours} soat {mins} daqiqa" if hours > 0 else f"{mins} daqiqa"
+        else:
+            time_str = "1 soat 30 daqiqa"
+        
         # Generate test link
         test_url = f"{settings.WEB_APP_URL}/static/student/index.html?token={session['session_token']}"
         
@@ -86,7 +131,7 @@ async def process_test_code(message: Message, state: FSMContext):
         msg_text = (
             f"✅ <b>Test topildi!</b>\n\n"
             f"📝 {test['title']}\n"
-            f"⏱️ Vaqt chegarasi: 1 soat 30 daqiqa\n"
+            f"⏱️ Qolgan vaqt: {time_str}\n"
             f"📊 Savollar:\n"
             f"   • Test (1-35): 1-32 savollarda 4 ta, 33-35 savollarda 6 ta variant\n"
             f"   • Yozma (36-37): Har bir savolda a) va b) qismlari bor\n\n"
