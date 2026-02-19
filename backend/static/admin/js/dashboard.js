@@ -2,6 +2,38 @@
  * Dashboard and main admin functionality
  */
 
+// MathLive virtual keyboard: resize modal when keyboard appears/disappears
+if (window.mathVirtualKeyboard) {
+    window.mathVirtualKeyboard.addEventListener('geometrychange', () => {
+        const kbRect = window.mathVirtualKeyboard.boundingRect;
+        // Find any visible modal-content
+        const editModal = document.getElementById('edit-test-modal');
+        const createModal = document.getElementById('create-test-modal');
+        const visibleModal = (editModal && !editModal.classList.contains('hidden')) ? editModal
+            : (createModal && !createModal.classList.contains('hidden')) ? createModal : null;
+
+        if (!visibleModal) return;
+        const modalContent = visibleModal.querySelector('.modal-content');
+        if (!modalContent) return;
+
+        if (kbRect && kbRect.height > 0) {
+            // Keyboard is visible — shrink modal content to fit above keyboard
+            const availableHeight = window.innerHeight - kbRect.height - 20;
+            modalContent.style.maxHeight = availableHeight + 'px';
+            modalContent.style.transition = 'max-height 0.2s ease';
+
+            // Auto-scroll focused math-field into view
+            const focused = modalContent.querySelector('math-field:focus-within');
+            if (focused) {
+                setTimeout(() => focused.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }
+        } else {
+            // Keyboard hidden — restore normal height
+            modalContent.style.maxHeight = '90vh';
+        }
+    });
+}
+
 // Page navigation
 document.querySelectorAll('.menu a[data-page]').forEach(link => {
     link.addEventListener('click', (e) => {
