@@ -73,6 +73,7 @@ class APIClient:
     async def create_session(self, user_id: str, test_id: str) -> Optional[Dict]:
         """
         Create a new test session.
+        Returns session dict on success, or {"error": "detail"} on 400.
         """
         session = await self._get_session()
         url = f"{self.base_url}/api/v1/sessions/start"
@@ -84,7 +85,11 @@ class APIClient:
         
         async with session.post(url, json=data) as response:
             if response.status == 400:
-                return None
+                try:
+                    error_data = await response.json()
+                    return {"error": error_data.get("detail", "Unknown error")}
+                except Exception:
+                    return {"error": "Unknown error"}
             response.raise_for_status()
             return await response.json()
     

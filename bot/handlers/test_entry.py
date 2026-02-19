@@ -109,12 +109,35 @@ async def process_test_code(message: Message, state: FSMContext):
         # Create session
         session = await api_client.create_session(user['id'], test['id'])
         
-        if not session:
-            await message.answer(
-                "❌ Siz bu testni allaqachon topshirgansiz!\n\n"
-                "Har bir talaba testni faqat bir marta ishlashi mumkin.",
-                reply_markup=get_main_menu()
-            )
+        if not session or session.get('error'):
+            error_msg = session.get('error', '') if session else ''
+            
+            if 'not started' in error_msg.lower() or 'boshlanmadi' in error_msg.lower():
+                await message.answer(
+                    "⏰ <b>Test hali boshlanmadi!</b>\n\n"
+                    "Test boshlanish vaqtini kuting.",
+                    parse_mode="HTML",
+                    reply_markup=get_main_menu()
+                )
+            elif 'ended' in error_msg.lower() or 'tugagan' in error_msg.lower():
+                await message.answer(
+                    "❌ <b>Test vaqti tugagan!</b>\n\n"
+                    "Bu testni ishlash uchun belgilangan vaqt tugadi.",
+                    parse_mode="HTML",
+                    reply_markup=get_main_menu()
+                )
+            elif 'already' in error_msg.lower() or 'attempted' in error_msg.lower():
+                await message.answer(
+                    "❌ Siz bu testni allaqachon topshirgansiz!\n\n"
+                    "Har bir talaba testni faqat bir marta ishlashi mumkin.",
+                    reply_markup=get_main_menu()
+                )
+            else:
+                await message.answer(
+                    f"❌ Sessiya yaratishda xatolik: {error_msg}\n\n"
+                    "Iltimos, qayta urinib ko'ring.",
+                    reply_markup=get_main_menu()
+                )
             await state.clear()
             return
         

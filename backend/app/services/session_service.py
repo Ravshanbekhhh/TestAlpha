@@ -44,15 +44,10 @@ async def create_session(db: AsyncSession, user_id: UUID, test_id: UUID) -> Opti
         
         now = datetime.utcnow()
         
-        # Check time window if test has scheduled times
-        if test.start_time and now < test.start_time:
-            raise ValueError("TEST_NOT_STARTED")
-        
+        # Calculate session expiry
         if test.end_time:
+            # Use test end_time + extra_minutes as session expiry
             effective_end = test.end_time + timedelta(minutes=test.extra_minutes)
-            if now >= effective_end:
-                raise ValueError("TEST_ENDED")
-            # Session expires at test end_time + extra_minutes
             expires_at = effective_end
         else:
             # No scheduled end time - use default duration
