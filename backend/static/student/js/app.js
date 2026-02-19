@@ -126,7 +126,7 @@ function createMCQGrid() {
     });
 }
 
-// Create written answer fields
+// Create written answer fields with MathLive math-field
 function createWrittenFields() {
     const container = document.getElementById('written-container');
     container.innerHTML = '';
@@ -139,36 +139,40 @@ function createWrittenFields() {
             <div class="written-number">${i}-savol</div>
             <div class="sub-answer">
                 <label>a)</label>
-                <textarea 
-                    class="written-textarea" 
-                    id="written-${i}-a"
-                    placeholder="a) qismiga javob yozing..."
-                ></textarea>
+                <div class="math-field-wrapper">
+                    <math-field 
+                        class="math-input" 
+                        id="written-${i}-a"
+                        virtual-keyboard-mode="onfocus"
+                    ></math-field>
+                </div>
             </div>
             <div class="sub-answer">
                 <label>b)</label>
-                <textarea 
-                    class="written-textarea" 
-                    id="written-${i}-b"
-                    placeholder="b) qismiga javob yozing..."
-                ></textarea>
+                <div class="math-field-wrapper">
+                    <math-field 
+                        class="math-input" 
+                        id="written-${i}-b"
+                        virtual-keyboard-mode="onfocus"
+                    ></math-field>
+                </div>
             </div>
         `;
         container.appendChild(item);
-
-        // Add change handlers for a) and b)
-        const textareaA = item.querySelector(`#written-${i}-a`);
-        const textareaB = item.querySelector(`#written-${i}-b`);
 
         if (!writtenAnswers[i]) {
             writtenAnswers[i] = { a: '', b: '' };
         }
 
-        textareaA.addEventListener('input', (e) => {
-            writtenAnswers[i].a = e.target.value;
+        // Add input handlers for math-field elements
+        const mfA = item.querySelector(`#written-${i}-a`);
+        const mfB = item.querySelector(`#written-${i}-b`);
+
+        mfA.addEventListener('input', () => {
+            writtenAnswers[i].a = mfA.value; // LaTeX string
         });
-        textareaB.addEventListener('input', (e) => {
-            writtenAnswers[i].b = e.target.value;
+        mfB.addEventListener('input', () => {
+            writtenAnswers[i].b = mfB.value; // LaTeX string
         });
     }
 }
@@ -239,7 +243,7 @@ async function submitTest() {
             // Disable further interaction
             document.getElementById('submit-btn').disabled = true;
             document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
-            document.querySelectorAll('.written-textarea').forEach(ta => ta.disabled = true);
+            document.querySelectorAll('.math-input').forEach(mf => mf.disabled = true);
         } else {
             let errorMessage = 'Topshirishda xatolik';
             try {

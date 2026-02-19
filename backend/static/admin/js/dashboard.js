@@ -245,23 +245,26 @@ async function openEditModal(testId) {
             `;
         }
 
-        // Open-ended questions
+        // Open-ended questions with MathLive math-field
         let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-37)</h3>';
+        const editMathValues = {};
         for (let i = 36; i <= 37; i++) {
             const aVal = (test.answer_key && test.answer_key.written_questions && test.answer_key.written_questions[i])
                 ? (test.answer_key.written_questions[i].a || '') : '';
             const bVal = (test.answer_key && test.answer_key.written_questions && test.answer_key.written_questions[i])
                 ? (test.answer_key.written_questions[i].b || '') : '';
+            editMathValues[`edit-open-${i}-a`] = aVal;
+            editMathValues[`edit-open-${i}-b`] = bVal;
             openEndedHTML += `
                 <div class="open-question">
                     <h4>Savol ${i}</h4>
                     <div class="sub-answer">
                         <label>a)</label>
-                        <textarea id="edit-open-${i}-a" class="written-answer-input" placeholder="a) qism javobi" rows="3">${aVal}</textarea>
+                        <math-field id="edit-open-${i}-a" class="admin-math-input" virtual-keyboard-mode="onfocus"></math-field>
                     </div>
                     <div class="sub-answer">
                         <label>b)</label>
-                        <textarea id="edit-open-${i}-b" class="written-answer-input" placeholder="b) qism javobi" rows="3">${bVal}</textarea>
+                        <math-field id="edit-open-${i}-b" class="admin-math-input" virtual-keyboard-mode="onfocus"></math-field>
                     </div>
                 </div>
             `;
@@ -270,6 +273,14 @@ async function openEditModal(testId) {
 
         document.getElementById('edit-mcq-answers-grid').innerHTML = mcqGrid + openEndedHTML;
         document.getElementById('edit-test-modal').classList.remove('hidden');
+
+        // Populate math-field values after DOM render
+        setTimeout(() => {
+            for (const [id, val] of Object.entries(editMathValues)) {
+                const mf = document.getElementById(id);
+                if (mf && val) mf.value = val;
+            }
+        }, 100);
     } catch (error) {
         alert('Test ma\'lumotlarini yuklashda xatolik: ' + error.message);
     }
@@ -350,7 +361,7 @@ document.getElementById('create-test-btn').addEventListener('click', () => {
         `;
     }
 
-    // Add open-ended questions (36-37)
+    // Add open-ended questions (36-37) with MathLive math-field
     let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-37)</h3>';
     for (let i = 36; i <= 37; i++) {
         openEndedHTML += `
@@ -358,11 +369,11 @@ document.getElementById('create-test-btn').addEventListener('click', () => {
                 <h4>Savol ${i}</h4>
                 <div class="sub-answer">
                     <label>a)</label>
-                    <textarea id="open-${i}-a" class="written-answer-input" placeholder="a) qism javobi" rows="3"></textarea>
+                    <math-field id="open-${i}-a" class="admin-math-input" virtual-keyboard-mode="onfocus"></math-field>
                 </div>
                 <div class="sub-answer">
                     <label>b)</label>
-                    <textarea id="open-${i}-b" class="written-answer-input" placeholder="b) qism javobi" rows="3"></textarea>
+                    <math-field id="open-${i}-b" class="admin-math-input" virtual-keyboard-mode="onfocus"></math-field>
                 </div>
             </div>
         `;

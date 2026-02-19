@@ -82,10 +82,19 @@ async def grade_and_save_result(
         correct_ans = written_answers_data.get(str(written_answer.question_number), {})
         
         # Compare each sub-part (a, b) - score 1 for each correct sub-part
-        # Normalize: strip, lower, collapse whitespace for flexible matching
+        # Normalize: strip, lower, collapse whitespace, and simplify LaTeX for flexible matching
         import re
         def normalize(s):
-            return re.sub(r'\s+', ' ', str(s).strip().lower()) if s else ''
+            if not s:
+                return ''
+            s = str(s).strip().lower()
+            # Remove extra whitespace
+            s = re.sub(r'\s+', ' ', s)
+            # Normalize common LaTeX variations
+            s = s.replace('\\left(', '(').replace('\\right)', ')')
+            s = s.replace('\\left[', '[').replace('\\right]', ']')
+            s = s.replace('\\cdot', '*').replace('\\times', '*')
+            return s
         
         score = 0
         student_a = normalize(student_ans.get('a', ''))

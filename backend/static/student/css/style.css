@@ -194,19 +194,27 @@ body {
     font-size: 16px;
 }
 
-.written-textarea {
+/* MathLive Math Field */
+.math-field-wrapper {
+    position: relative;
+}
+
+math-field.math-input {
     width: 100%;
-    min-height: 120px;
+    min-height: 60px;
     border: 2px solid #dee2e6;
     border-radius: 8px;
     padding: 12px;
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
+    font-size: 22px;
     transition: all 0.3s ease;
+    display: block;
+    background: white;
+    --caret-color: #667eea;
+    --selection-background-color: rgba(102, 126, 234, 0.2);
+    --contains-highlight-background-color: transparent;
 }
 
-.written-textarea:focus {
+math-field.math-input:focus-within {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -386,9 +394,9 @@ body {
         padding: 12px;
     }
 
-    .written-textarea {
-        min-height: 80px;
-        font-size: 13px;
+    math-field.math-input {
+        min-height: 50px;
+        font-size: 18px;
         padding: 10px;
     }
 
