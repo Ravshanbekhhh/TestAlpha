@@ -82,16 +82,21 @@ async def grade_and_save_result(
         correct_ans = written_answers_data.get(str(written_answer.question_number), {})
         
         # Compare each sub-part (a, b) - score 1 for each correct sub-part
-        score = 0
-        student_a = str(student_ans.get('a', '')).strip().lower() if student_ans.get('a') else ''
-        student_b = str(student_ans.get('b', '')).strip().lower() if student_ans.get('b') else ''
-        correct_a = str(correct_ans.get('a', '')).strip().lower() if correct_ans.get('a') else ''
-        correct_b = str(correct_ans.get('b', '')).strip().lower() if correct_ans.get('b') else ''
+        # Normalize: strip, lower, collapse whitespace for flexible matching
+        import re
+        def normalize(s):
+            return re.sub(r'\s+', ' ', str(s).strip().lower()) if s else ''
         
-        if student_a and correct_a and student_a == correct_a:
+        score = 0
+        student_a = normalize(student_ans.get('a', ''))
+        student_b = normalize(student_ans.get('b', ''))
+        correct_a = normalize(correct_ans.get('a', ''))
+        correct_b = normalize(correct_ans.get('b', ''))
+        
+        if student_a and correct_a and (student_a == correct_a or correct_a in student_a):
             score += 1
             written_correct_count += 1
-        if student_b and correct_b and student_b == correct_b:
+        if student_b and correct_b and (student_b == correct_b or correct_b in student_b):
             score += 1
             written_correct_count += 1
         

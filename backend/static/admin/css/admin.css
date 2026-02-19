@@ -407,15 +407,19 @@ table td {
     margin-bottom: 5px;
 }
 
-.open-question .sub-answer input {
+.open-question .sub-answer input,
+.open-question .sub-answer textarea {
     width: 100%;
     padding: 10px;
     border: 2px solid #e2e8f0;
     border-radius: 6px;
     font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
 }
 
-.open-question .sub-answer input:focus {
+.open-question .sub-answer input:focus,
+.open-question .sub-answer textarea:focus {
     outline: none;
     border-color: #667eea;
 }

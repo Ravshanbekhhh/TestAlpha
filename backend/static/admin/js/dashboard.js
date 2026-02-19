@@ -257,11 +257,11 @@ async function openEditModal(testId) {
                     <h4>Savol ${i}</h4>
                     <div class="sub-answer">
                         <label>a)</label>
-                        <input type="text" id="edit-open-${i}-a" value="${aVal}" placeholder="a) qism javobi">
+                        <textarea id="edit-open-${i}-a" class="written-answer-input" placeholder="a) qism javobi" rows="3">${aVal}</textarea>
                     </div>
                     <div class="sub-answer">
                         <label>b)</label>
-                        <input type="text" id="edit-open-${i}-b" value="${bVal}" placeholder="b) qism javobi">
+                        <textarea id="edit-open-${i}-b" class="written-answer-input" placeholder="b) qism javobi" rows="3">${bVal}</textarea>
                     </div>
                 </div>
             `;
@@ -358,11 +358,11 @@ document.getElementById('create-test-btn').addEventListener('click', () => {
                 <h4>Savol ${i}</h4>
                 <div class="sub-answer">
                     <label>a)</label>
-                    <input type="text" id="open-${i}-a" placeholder="a) qism javobi">
+                    <textarea id="open-${i}-a" class="written-answer-input" placeholder="a) qism javobi" rows="3"></textarea>
                 </div>
                 <div class="sub-answer">
                     <label>b)</label>
-                    <input type="text" id="open-${i}-b" placeholder="b) qism javobi">
+                    <textarea id="open-${i}-b" class="written-answer-input" placeholder="b) qism javobi" rows="3"></textarea>
                 </div>
             </div>
         `;
