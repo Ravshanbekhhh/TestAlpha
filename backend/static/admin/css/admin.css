@@ -445,6 +445,15 @@ math-field.admin-math-input:focus-within {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* MathLive virtual keyboard - must be above modal z-index (1000) */
+body {
+    --keyboard-zindex: 10000;
+}
+
+.ML__keyboard {
+    z-index: 10000 !important;
+}
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
