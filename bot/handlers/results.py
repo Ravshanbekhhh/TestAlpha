@@ -5,7 +5,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from datetime import datetime
 
-from keyboards.menu import get_main_menu
+from keyboards.menu import get_main_menu, get_remove_keyboard
 from api_client import api_client
 
 
@@ -15,14 +15,14 @@ router = Router()
 @router.message(F.text == "📊 Natijalarim")
 async def show_results(message: Message):
     """
-    Show user's test results.
+    Show user's test results (legacy text handler, kept for compatibility).
     """
     # Check if user is registered
     user = await api_client.get_user_by_telegram_id(message.from_user.id)
     
     if not user:
         await message.answer(
-            "❌ Avval /register buyrug'i orqali ro'yxatdan o'ting.",
+            "❌ Avval /start buyrug'i orqali ro'yxatdan o'ting.",
             reply_markup=get_main_menu()
         )
         return

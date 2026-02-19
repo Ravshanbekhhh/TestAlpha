@@ -7,7 +7,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, W
 from aiogram.utils.markdown import hbold
 
 from states.registration import TestEntryStates
-from keyboards.menu import get_main_menu, get_cancel_keyboard
+from keyboards.menu import get_main_menu, get_cancel_keyboard, get_remove_keyboard
 from api_client import api_client
 from config import settings
 
@@ -15,41 +15,9 @@ from config import settings
 router = Router()
 
 
-@router.message(F.text == "🚀 Testni boshlash")
-async def start_test_entry(message: Message, state: FSMContext):
-    """
-    Start test code entry process.
-    """
-    # Check if user is registered
-    user = await api_client.get_user_by_telegram_id(message.from_user.id)
-    
-    if not user:
-        await message.answer(
-            "❌ Avval /register buyrug'i orqali ro'yxatdan o'ting.",
-            reply_markup=get_main_menu()
-        )
-        return
-    
-    await state.set_state(TestEntryStates.waiting_for_test_code)
-    await message.answer(
-        "🔐 <b>Test kodini kiriting</b>\n\n"
-        "O'qituvchingizdan olgan test kodini yuboring:",
-        parse_mode="HTML",
-        reply_markup=get_cancel_keyboard()
-    )
-
-
 @router.message(TestEntryStates.waiting_for_test_code)
 async def process_test_code(message: Message, state: FSMContext):
     """Process test code and create session."""
-    if message.text == "❌ Bekor qilish":
-        await state.clear()
-        await message.answer(
-            "Test kirish bekor qilindi.",
-            reply_markup=get_main_menu()
-        )
-        return
-    
     test_code = message.text.strip().upper()
     
     try:
@@ -177,18 +145,21 @@ async def process_test_code(message: Message, state: FSMContext):
         
         await state.clear()
         
-        # Telegram rejects localhost URLs in inline buttons,
-        # so use inline keyboard only for real domains
+        # Build inline keyboard with test link + main menu
         if "localhost" in test_url or "127.0.0.1" in test_url:
+            inline_kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="main_menu")]
+            ])
             await message.answer(
                 msg_text + f"\n\n<b>🔗 Testni boshlash:</b>\n{test_url}",
                 parse_mode="HTML",
-                reply_markup=get_main_menu(),
+                reply_markup=inline_kb,
                 disable_web_page_preview=True
             )
         else:
             inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📝 Testni boshlash", web_app=WebAppInfo(url=test_url))]
+                [InlineKeyboardButton(text="📝 Testni boshlash", web_app=WebAppInfo(url=test_url))],
+                [InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="main_menu")]
             ])
             await message.answer(
                 msg_text,

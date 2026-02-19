@@ -3,30 +3,12 @@ Start command handler with inline buttons.
 """
 from aiogram import Router
 from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 
 from api_client import api_client
+from keyboards.menu import get_main_menu
 
 router = Router()
-
-
-def get_inline_menu(registered: bool = False):
-    """Get inline keyboard with buttons"""
-    buttons = []
-    
-    if registered:
-        # Registered user - show test button and results
-        buttons.append([InlineKeyboardButton(text="✅ Testni boshlash", callback_data="start_test")])
-        buttons.append([
-            InlineKeyboardButton(text="📊 Natijalarim", callback_data="my_results"),
-            InlineKeyboardButton(text="📈 Test tahlili", callback_data="test_analytics")
-        ])
-        buttons.append([InlineKeyboardButton(text="🔄 Qayta ro'yxatdan o'tish", callback_data="re_register")])
-    else:
-        # Not registered - show register button
-        buttons.append([InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")])
-    
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 @router.message(CommandStart())
@@ -35,11 +17,14 @@ async def cmd_start(message: Message):
     Handle /start command with inline buttons.
     """
     try:
+        # Remove any existing reply keyboard first
+        await message.answer("⏳", reply_markup=ReplyKeyboardRemove())
+        
         # Check if user is registered
         user = await api_client.get_user_by_telegram_id(message.from_user.id)
         
         if user:
-            # User exists
+            # User exists - show main menu
             await message.answer(
                 f"👋 <b>Xush kelibsiz, {user['full_name']}!</b>\n\n"
                 f"🎓 <b>Bu bot nimalar qila oladi?</b>\n\n"
@@ -49,16 +34,18 @@ async def cmd_start(message: Message):
                 f"🎯 <b>Siz bu bot orqali Milliy Sertifikat testlari ishlab o'z "
                 f"natijangizni bilib olishingiz mumkin!</b>\n\n"
                 f"Foydalanishni boshlash uchun pastdagi tugmani bosing 🤝🤝",
-                reply_markup=get_inline_menu(registered=True),
+                reply_markup=get_main_menu(),
                 parse_mode="HTML"
             )
         else:
-            # User doesn't exist
+            # User doesn't exist - show register button
             await message.answer(
                 f"👋 <b>Salom, {message.from_user.first_name}!</b>\n\n"
                 f"📋 <b>Test ishlash uchun pastdagi tugmani bosing:</b>\n\n"
                 f"Ro'yxatdan o'tganingizdan so'ng testlarni ishlashingiz mumkin bo'ladi.",
-                reply_markup=get_inline_menu(registered=False),
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")]
+                ]),
                 parse_mode="HTML"
             )
     except Exception as e:
@@ -66,6 +53,8 @@ async def cmd_start(message: Message):
         await message.answer(
             f"👋 <b>Salom, {message.from_user.first_name}!</b>\n\n"
             f"📋 <b>Test ishlash uchun pastdagi tugmani bosing:</b>",
-            reply_markup=get_inline_menu(registered=False),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")]
+            ]),
             parse_mode="HTML"
         )

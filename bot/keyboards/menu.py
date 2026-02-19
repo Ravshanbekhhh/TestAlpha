@@ -1,27 +1,27 @@
 """
-Keyboard menus for the bot.
+Keyboard menus for the bot - all inline keyboards.
 """
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 
 
-def get_main_menu() -> ReplyKeyboardMarkup:
-    """Get main menu keyboard."""
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🚀 Testni boshlash")],
-            [KeyboardButton(text="📊 Natijalarim")],
-            [KeyboardButton(text="📈 Test tahlili")]
+def get_main_menu() -> InlineKeyboardMarkup:
+    """Get main menu as inline keyboard."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚀 Testni boshlash", callback_data="start_test")],
+        [
+            InlineKeyboardButton(text="📊 Natijalarim", callback_data="my_results"),
+            InlineKeyboardButton(text="📈 Test tahlili", callback_data="test_analytics")
         ],
-        resize_keyboard=True,
-        is_persistent=True
-    )
-    return keyboard
+    ])
 
 
-def get_cancel_keyboard() -> ReplyKeyboardMarkup:
-    """Get cancel keyboard for FSM flows."""
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Bekor qilish")]],
-        resize_keyboard=True
-    )
-    return keyboard
+def get_cancel_keyboard() -> InlineKeyboardMarkup:
+    """Get cancel keyboard as inline button for FSM flows."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel")]
+    ])
+
+
+def get_remove_keyboard() -> ReplyKeyboardRemove:
+    """Remove any existing reply keyboard."""
+    return ReplyKeyboardRemove()
