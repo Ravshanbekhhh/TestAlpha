@@ -158,7 +158,7 @@ async def process_test_code(message: Message, state: FSMContext):
             )
         else:
             inline_kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="📝 Testni boshlash", web_app=WebAppInfo(url=test_url))],
+                [InlineKeyboardButton(text="📝 Testni boshlash", url=test_url)],
                 [InlineKeyboardButton(text="🏠 Asosiy menyu", callback_data="main_menu")]
             ])
             await message.answer(
