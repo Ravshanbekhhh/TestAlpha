@@ -1,8 +1,16 @@
 """
 Timer utilities for session management.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
+
+# Uzbekistan timezone UTC+5
+UZ_TZ = timezone(timedelta(hours=5))
+
+
+def now_uz() -> datetime:
+    """Get current Uzbekistan time (UTC+5) as naive datetime."""
+    return datetime.now(UZ_TZ).replace(tzinfo=None)
 
 
 def generate_session_token() -> str:
@@ -20,7 +28,7 @@ def calculate_expiry_time(duration_minutes: int) -> datetime:
     Returns:
         Datetime object representing expiration time
     """
-    return datetime.utcnow() + timedelta(minutes=duration_minutes)
+    return now_uz() + timedelta(minutes=duration_minutes)
 
 
 def is_expired(expires_at: datetime) -> bool:
@@ -33,7 +41,7 @@ def is_expired(expires_at: datetime) -> bool:
     Returns:
         True if expired, False otherwise
     """
-    return datetime.utcnow() >= expires_at
+    return now_uz() >= expires_at
 
 
 def time_remaining(expires_at: datetime) -> int:
@@ -46,5 +54,5 @@ def time_remaining(expires_at: datetime) -> int:
     Returns:
         Remaining seconds (0 if expired)
     """
-    remaining = (expires_at - datetime.utcnow()).total_seconds()
+    remaining = (expires_at - now_uz()).total_seconds()
     return max(0, int(remaining))

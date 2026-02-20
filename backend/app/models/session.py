@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from app.database import Base
+from app.utils.timer import now_uz
 
 
 class TestSession(Base):
@@ -19,7 +20,7 @@ class TestSession(Base):
     user_id = Column(UUID(), ForeignKey("users.id"), nullable=False)
     test_id = Column(UUID(), ForeignKey("tests.id"), nullable=False)
     session_token = Column(String(255), unique=True, nullable=False, index=True)
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, default=now_uz, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     is_submitted = Column(Boolean, default=False, nullable=False)
     is_expired = Column(Boolean, default=False, nullable=False)
@@ -38,14 +39,14 @@ class TestSession(Base):
     @property
     def is_valid(self) -> bool:
         """Check if session is still valid."""
-        return not self.is_expired and not self.is_submitted and datetime.utcnow() < self.expires_at
+        return not self.is_expired and not self.is_submitted and now_uz() < self.expires_at
     
     @property
     def time_remaining_seconds(self) -> int:
         """Get remaining time in seconds."""
         if self.is_expired or self.is_submitted:
             return 0
-        remaining = (self.expires_at - datetime.utcnow()).total_seconds()
+        remaining = (self.expires_at - now_uz()).total_seconds()
         return max(0, int(remaining))
     
     def __repr__(self):

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from app.models.session import TestSession
 from app.models.user import User
 from app.models.test import Test
-from app.utils.timer import generate_session_token
+from app.utils.timer import generate_session_token, now_uz
 from app.config import settings
 
 
@@ -42,7 +42,7 @@ async def create_session(db: AsyncSession, user_id: UUID, test_id: UUID) -> Opti
         )
         await db.execute(cleanup_stmt)
         
-        now = datetime.utcnow()
+        now = now_uz()
         
         # Calculate session expiry
         if test.end_time:
@@ -84,7 +84,7 @@ async def get_session_by_token(db: AsyncSession, session_token: str) -> Optional
     
     # Auto-expire if time has passed
     if session and not session.is_submitted and not session.is_expired:
-        if datetime.utcnow() >= session.expires_at:
+        if now_uz() >= session.expires_at:
             session.is_expired = True
             await db.commit()
     

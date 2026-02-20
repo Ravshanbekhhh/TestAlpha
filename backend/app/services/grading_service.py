@@ -9,6 +9,7 @@ from datetime import datetime
 import json  # For converting dict to JSON string
 
 from app.models.result import Result, MCQAnswer, WrittenAnswer, WrittenReview
+from app.utils.timer import now_uz
 from app.models.test import AnswerKey
 from app.models.session import TestSession
 from app.schemas.result import ResultSubmit, MCQAnswerSubmit, WrittenAnswerSubmit
@@ -46,7 +47,7 @@ async def grade_and_save_result(
         mcq_score=0,
         written_score=0,
         total_score=0,
-        submitted_at=datetime.utcnow()
+        submitted_at=now_uz()
     )
     
     db.add(result_record)
@@ -117,7 +118,7 @@ async def grade_and_save_result(
             question_number=written_answer.question_number,
             student_answer=answer_str,  # Store as JSON string
             score=score,
-            reviewed_at=datetime.utcnow()  # Auto-reviewed
+            reviewed_at=now_uz()  # Auto-reviewed
         )
         db.add(written_record)
     
@@ -161,7 +162,7 @@ async def grade_written_answer(
     
     # Update written answer
     written_answer.score = score
-    written_answer.reviewed_at = datetime.utcnow()
+    written_answer.reviewed_at = now_uz()
     
     # Create review record
     review = WrittenReview(

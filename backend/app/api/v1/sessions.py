@@ -92,8 +92,8 @@ async def get_session(
     
     # Auto-expire if time has passed
     if not session.is_submitted and not session.is_expired:
-        from datetime import datetime
-        if datetime.utcnow() >= session.expires_at:
+        from app.utils.timer import now_uz
+        if now_uz() >= session.expires_at:
             session.is_expired = True
             await db.commit()
             await db.refresh(session)

@@ -4,13 +4,9 @@
 
 class Timer {
     constructor(expiresAt, onWarning, onExpire) {
-        // Backend sends UTC datetime without timezone suffix
-        // Append 'Z' so JavaScript knows it's UTC, not local time
-        let dateStr = expiresAt;
-        if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
-            dateStr += 'Z';
-        }
-        this.expiresAt = new Date(dateStr);
+        // Backend sends Uzbekistan local time (UTC+5) without timezone suffix
+        // Parse as-is (browser treats it as local time)
+        this.expiresAt = new Date(expiresAt);
         this.onWarning = onWarning;
         this.onExpire = onExpire;
         this.warningShown = false;
