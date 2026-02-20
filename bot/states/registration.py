@@ -14,3 +14,8 @@ class RegistrationStates(StatesGroup):
 class TestEntryStates(StatesGroup):
     """States for test code entry flow."""
     waiting_for_test_code = State()
+
+
+class ResultStates(StatesGroup):
+    """States for viewing results by test code."""
+    waiting_for_result_code = State()

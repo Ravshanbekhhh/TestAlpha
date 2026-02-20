@@ -278,9 +278,9 @@ async function openEditModal(testId) {
         }
 
         // Open-ended questions with MathLive math-field
-        let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-37)</h3>';
+        let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-45)</h3>';
         const editMathValues = {};
-        for (let i = 36; i <= 37; i++) {
+        for (let i = 36; i <= 45; i++) {
             const aVal = (test.answer_key && test.answer_key.written_questions && test.answer_key.written_questions[i])
                 ? (test.answer_key.written_questions[i].a || '') : '';
             const bVal = (test.answer_key && test.answer_key.written_questions && test.answer_key.written_questions[i])
@@ -334,7 +334,7 @@ document.getElementById('edit-test-form').addEventListener('submit', async (e) =
 
     // Collect open-ended answers
     const writtenQuestions = {};
-    for (let i = 36; i <= 37; i++) {
+    for (let i = 36; i <= 45; i++) {
         writtenQuestions[String(i)] = {
             a: document.getElementById(`edit-open-${i}-a`).value,
             b: document.getElementById(`edit-open-${i}-b`).value
@@ -393,9 +393,9 @@ document.getElementById('create-test-btn').addEventListener('click', () => {
         `;
     }
 
-    // Add open-ended questions (36-37) with MathLive math-field
-    let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-37)</h3>';
-    for (let i = 36; i <= 37; i++) {
+    // Add open-ended questions (36-45) with MathLive math-field
+    let openEndedHTML = '<div class="open-ended-section"><h3>Yozma savollar (36-45)</h3>';
+    for (let i = 36; i <= 45; i++) {
         openEndedHTML += `
             <div class="open-question">
                 <h4>Savol ${i}</h4>
@@ -432,9 +432,9 @@ document.getElementById('create-test-form').addEventListener('submit', async (e)
         mcqAnswers[String(i)] = document.getElementById(`mcq-${i}`).value;
     }
 
-    // Collect open-ended answers (36-37)
+    // Collect open-ended answers (36-45)
     const writtenQuestions = {};
-    for (let i = 36; i <= 37; i++) {
+    for (let i = 36; i <= 45; i++) {
         writtenQuestions[String(i)] = {
             a: document.getElementById(`open-${i}-a`).value,
             b: document.getElementById(`open-${i}-b`).value

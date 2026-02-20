@@ -134,7 +134,7 @@ async def process_test_code(message: Message, state: FSMContext):
             f"⏱️ Qolgan vaqt: {time_str}\n"
             f"📊 Savollar:\n"
             f"   • Test (1-35): 1-32 savollarda 4 ta, 33-35 savollarda 6 ta variant\n"
-            f"   • Yozma (36-37): Har bir savolda a) va b) qismlari bor\n\n"
+            f"   • Yozma (36-45): Har bir savolda a) va b) qismlari bor\n\n"
             f"⚠️ <b>Muhim:</b>\n"
             f"• Havolani ochganingizda taymer boshlanadi\n"
             f"• Testni to'xtatib bo'lmaydi\n"

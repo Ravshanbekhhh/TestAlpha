@@ -15,7 +15,7 @@ class MCQAnswerSubmit(BaseModel):
 
 class WrittenAnswerSubmit(BaseModel):
     """Schema for submitting written answer with a/b sub-parts."""
-    question_number: int = Field(..., ge=36, le=37)  # Only Q36-37
+    question_number: int = Field(..., ge=36, le=45)  # Q36-45
     answer: Dict[str, str] | None = None  # {'a': 'answer', 'b': 'answer'}
 
 
@@ -23,7 +23,7 @@ class ResultSubmit(BaseModel):
     """Schema for submitting complete test results."""
     session_token: str
     mcq_answers: List[MCQAnswerSubmit] = Field(..., min_length=35, max_length=35)
-    written_answers: List[WrittenAnswerSubmit] = Field(..., min_length=2, max_length=2)  # Only Q36-37
+    written_answers: List[WrittenAnswerSubmit] = Field(..., min_length=10, max_length=10)  # Q36-45
 
 
 class MCQAnswerResponse(BaseModel):
@@ -79,6 +79,6 @@ class UserResultSummary(BaseModel):
     mcq_score: int
     mcq_total: int = 35
     written_score: int
-    written_total: int = 2  # Only Q36-37 (each with a/b parts, total 4 sub-parts)
+    written_total: int = 10  # Q36-45 (each with a/b parts, total 20 sub-parts)
     total_score: int
     submitted_at: datetime

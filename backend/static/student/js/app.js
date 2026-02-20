@@ -131,8 +131,8 @@ function createWrittenFields() {
     const container = document.getElementById('written-container');
     container.innerHTML = '';
 
-    // Questions 36-37: Each has a) and b) sub-parts
-    for (let i = 36; i <= 37; i++) {
+    // Questions 36-45: Each has a) and b) sub-parts
+    for (let i = 36; i <= 45; i++) {
         const item = document.createElement('div');
         item.className = 'written-item';
         item.innerHTML = `
@@ -209,9 +209,9 @@ async function submitTest() {
         });
     }
 
-    // Prepare written answers (36-37 with a/b sub-parts)
+    // Prepare written answers (36-45 with a/b sub-parts)
     const writtenArray = [];
-    for (let i = 36; i <= 37; i++) {
+    for (let i = 36; i <= 45; i++) {
         writtenArray.push({
             question_number: i,
             answer: writtenAnswers[i] || { a: null, b: null }
@@ -238,7 +238,7 @@ async function submitTest() {
         // Both 200 (existing result) and 201 (new result) are success
         if (response.ok) {
             const result = await response.json();
-            alert(`Test muvaffaqiyatli topshirildi!\n\nMCQ Ball: ${result.mcq_score}/35\n\nYozma javoblar o'qituvchi tomonidan baholanadi.\n\nNatijalaringizni Telegram botdan tekshiring!`);
+            alert(`Test muvaffaqiyatli topshirildi!\n\nNatijalaringizni Telegram botdan tekshiring!`);
 
             // Disable further interaction
             document.getElementById('submit-btn').disabled = true;

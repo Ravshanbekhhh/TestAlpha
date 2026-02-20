@@ -60,7 +60,8 @@ async def export_results_to_excel(db: AsyncSession, test_id: UUID, filepath: str
     headers = ["Name", "Surname", "Region", "Correct"]
     for i in range(1, 36):
         headers.append(f"Q{i}")
-    headers.extend(["Q36a", "Q36b", "Q37a", "Q37b"])
+    for i in range(36, 46):
+        headers.extend([f"Q{i}a", f"Q{i}b"])
     
     ws.append(headers)
     
@@ -116,7 +117,7 @@ async def export_results_to_excel(db: AsyncSession, test_id: UUID, filepath: str
         
         # Add written answers as 0/1 per sub-part (Q36a, Q36b, Q37a, Q37b)
         written_dict = {ans.question_number: ans for ans in written_answers}
-        for q_num in [36, 37]:
+        for q_num in range(36, 46):
             written_ans = written_dict.get(q_num)
             correct_ans = written_answers_key.get(str(q_num), {})
             
@@ -254,7 +255,8 @@ async def export_results_to_pdf(db: AsyncSession, test_id: UUID, filepath: str) 
     headers = ["Name", "Surname", "Region", "Bal"]
     for i in range(1, 36):
         headers.append(f"Q{i}")
-    headers.extend(["36a", "36b", "37a", "37b"])
+    for i in range(36, 46):
+        headers.extend([f"{i}a", f"{i}b"])
     
     table_data = [headers]
     
@@ -297,7 +299,7 @@ async def export_results_to_pdf(db: AsyncSession, test_id: UUID, filepath: str) 
         
         # Written answers as 0/1 per sub-part
         written_dict = {ans.question_number: ans for ans in written_answers}
-        for q_num in [36, 37]:
+        for q_num in range(36, 46):
             written_ans = written_dict.get(q_num)
             correct_ans = written_answers_key.get(str(q_num), {})
             
@@ -333,7 +335,7 @@ async def export_results_to_pdf(db: AsyncSession, test_id: UUID, filepath: str) 
     bal_width = 0.35 * inch
     
     col_widths = [name_width, name_width, name_width, bal_width]
-    col_widths.extend([q_width] * 39)  # Q1-Q35 + Q36a,Q36b,Q37a,Q37b
+    col_widths.extend([q_width] * 55)  # Q1-Q35 + Q36a..Q45b
     
     results_table = Table(table_data, colWidths=col_widths)
     

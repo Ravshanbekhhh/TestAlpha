@@ -77,65 +77,37 @@ async def callback_start_test(callback: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data == "my_results")
-async def callback_my_results(callback: CallbackQuery):
-    """Handle my results button"""
+async def callback_my_results(callback: CallbackQuery, state: FSMContext):
+    """Handle my results button - ask for test code"""
     from api_client import api_client
+    from states.registration import ResultStates
+    from keyboards.menu import get_cancel_keyboard
     
-    try:
-        user = await api_client.get_user_by_telegram_id(callback.from_user.id)
-        
-        if not user:
-            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-            await callback.message.edit_text(
-                "❌ Siz hali ro'yxatdan o'tmagansiz.\n\n"
-                "/start buyrug'ini yuboring.",
-                parse_mode="HTML",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")]
-                ])
-            )
-            await callback.answer()
-            return
-        
-        results = await api_client.get_user_results(user['id'])
-        
-        if not results:
-            await callback.message.edit_text(
-                "📊 <b>Natijalar</b>\n\n"
-                "Siz hali hech qanday test topshirmadingiz.",
-                parse_mode="HTML",
-                reply_markup=get_main_menu()
-            )
-            await callback.answer()
-            return
-        
-        # Format results
-        text = "📊 <b>Sizning natijalaringiz:</b>\n\n"
-        
-        for i, result in enumerate(results, 1):
-            test_code = result.get('test_code', '')
-            text += f"<b>{i}. {result.get('test_title', 'Test')}</b>\n"
-            if test_code:
-                text += f"   🔑 Kod: {test_code}\n"
-            text += f"   📝 Test: {result['mcq_score']}/{result.get('mcq_total', 35)}\n"
-            text += f"   ✍️ Yozma: {result['written_score']}/{result.get('written_total', 2)}\n"
-            text += f"   ⭐️ Jami: {result['total_score']}\n"
-            text += f"   📅 Sana: {result['submitted_at'][:10]}\n\n"
-        
+    user = await api_client.get_user_by_telegram_id(callback.from_user.id)
+    
+    if not user:
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
         await callback.message.edit_text(
-            text,
+            "❌ Siz hali ro'yxatdan o'tmagansiz.\n\n"
+            "/start buyrug'ini yuboring.",
             parse_mode="HTML",
-            reply_markup=get_main_menu()
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="📝 Ro'yxatdan o'tish", callback_data="register")]
+            ])
         )
         await callback.answer()
-        
-    except Exception as e:
-        await callback.message.edit_text(
-            f"❌ Xatolik yuz berdi: {str(e)}",
-            parse_mode="HTML",
-            reply_markup=get_main_menu()
-        )
-        await callback.answer()
+        return
+    
+    await state.update_data(user_id=user['id'])
+    await state.set_state(ResultStates.waiting_for_result_code)
+    await callback.message.edit_text(
+        "📊 <b>Natijalarni ko'rish</b>\n\n"
+        "🔑 Test kodini kiriting:",
+        parse_mode="HTML",
+        reply_markup=get_cancel_keyboard()
+    )
+    await callback.answer()
+
 
 
 @router.callback_query(F.data == "test_analytics")

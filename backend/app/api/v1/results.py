@@ -144,6 +144,78 @@ async def get_user_results_endpoint(
     return summaries
 
 
+@router.get("/user/{user_id}/test-code/{test_code}")
+async def get_user_result_by_test_code(
+    user_id: UUID,
+    test_code: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get detailed result for a user by test code (for Telegram bot per-question view).
+    """
+    # Find test by code
+    stmt = select(Test).where(Test.test_code == test_code.upper())
+    test_result = await db.execute(stmt)
+    test = test_result.scalars().first()
+    
+    if not test:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Test topilmadi"
+        )
+    
+    # Find result for this user + test
+    stmt = select(Result).where(
+        Result.user_id == user_id,
+        Result.test_id == test.id
+    )
+    result = await db.execute(stmt)
+    result_record = result.scalars().first()
+    
+    if not result_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Natija topilmadi"
+        )
+    
+    # Load MCQ answers
+    stmt = select(MCQAnswer).where(MCQAnswer.result_id == result_record.id).order_by(MCQAnswer.question_number)
+    mcq_result = await db.execute(stmt)
+    mcq_answers_list = mcq_result.scalars().all()
+    
+    # Load written answers
+    stmt = select(WrittenAnswer).where(WrittenAnswer.result_id == result_record.id).order_by(WrittenAnswer.question_number)
+    written_result = await db.execute(stmt)
+    written_answers_list = written_result.scalars().all()
+    
+    return {
+        "test_title": test.title,
+        "test_code": test.test_code,
+        "mcq_score": result_record.mcq_score,
+        "written_score": result_record.written_score,
+        "total_score": result_record.total_score,
+        "submitted_at": result_record.submitted_at.isoformat(),
+        "mcq_answers": [
+            {
+                "question_number": a.question_number,
+                "student_answer": a.student_answer,
+                "correct_answer": a.correct_answer,
+                "is_correct": a.is_correct
+            }
+            for a in mcq_answers_list
+        ],
+        "written_answers": [
+            {
+                "question_number": a.question_number,
+                "student_answer": a.student_answer,
+                "score": a.score
+            }
+            for a in written_answers_list
+        ]
+    }
+
+
+
 @router.get("/{result_id}", response_model=ResultResponse)
 async def get_result(
     result_id: UUID,

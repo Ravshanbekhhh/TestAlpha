@@ -104,6 +104,20 @@ class APIClient:
             response.raise_for_status()
             return await response.json()
     
+    async def get_result_by_test_code(self, user_id: str, test_code: str) -> Optional[Dict]:
+        """
+        Get detailed result for a user by test code.
+        Returns None if not found.
+        """
+        session = await self._get_session()
+        url = f"{self.base_url}/api/v1/results/user/{user_id}/test-code/{test_code}"
+        
+        async with session.get(url) as response:
+            if response.status == 404:
+                return None
+            response.raise_for_status()
+            return await response.json()
+    
     async def update_user(self, telegram_id: int, full_name: str, surname: str, region: str) -> Dict:
         """
         Update existing user info (for re-registration).
